@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/data/vla/Openpi/examples/uav_flow/convert_uav_flow_data_to_lerobot1.py", line 138, in main
+    flush_episode(buffer)
+  File "/data/vla/Openpi/examples/uav_flow/convert_uav_flow_data_to_lerobot1.py", line 117, in flush_episode
+    dataset.consolidate(run_compute_stats=False)
+    ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'LeRobotDataset' object has no attribute 'consolidate'
