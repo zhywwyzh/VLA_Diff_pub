@@ -1,0 +1,501 @@
+5
+2025-04-22_14-17-18;Need to get closer to the streetlight on the right side
+2025-04-18_13-19-50;Approach the fire hydrant from the right side
+2025-04-18_14-12-51;Need to get closer to the streetlight on the right side
+2025-04-20_09-36-05;Need to get closer to the tree on the side
+2025-04-09_09-51-22;Get closer to the monitoring on the left side
+2025-04-19_15-23-08;Need to get closer to the streetlight on the right side
+2025-04-22_15-20-28;Need to get closer to the streetlight on the right side
+2025-04-28_14-38-55;Need to get closer to the streetlight on the right side
+2025-05-02_08-28-57;Need to get closer to the streetlight on the right side
+2025-04-18_13-18-43;Approach the fire hydrant from the right side
+2025-05-03_08-26-39;Need to get closer to the streetlight on the right side
+2025-04-28_09-31-31;Need to get closer to the streetlight on the right side
+2025-04-14_08-30-52;Move closer to the tree on the right side from the front left
+2025-04-18_13-51-54;Move closer to the sign on the front side
+2025-04-28_11-44-10;Need to get closer to the streetlight on the right side
+2025-04-19_14-36-56;Need to get closer to the streetlight on the right side
+2025-04-23_10-02-48;Approach the fire hydrant from the right side
+2025-04-24_11-31-08;Approach the streetlight from the right side
+2025-04-20_14-23-04;Suggest moving closer to the fire hydrant
+2025-04-28_14-41-05;Need to get closer to the streetlight on the right side
+2025-04-24_07-44-54;Approach the streetlight from the right side
+2025-04-28_11-46-04;Need to get closer to the streetlight on the right side
+2025-04-22_15-15-44;Need to get closer to the streetlight on the right side
+2025-04-23_11-06-14;Need to get closer to the streetlight on the right side
+2025-04-13_08-44-29;Need to get closer to the streetlight on the right side
+2025-04-13_09-45-41;Need to get closer to the streetlight on the right side
+2025-04-24_11-31-33;Approach the middle streetlight from the left side
+2025-04-23_11-03-50;Need to get closer to the streetlight on the right side
+2025-04-20_08-32-38;Need to get closer to the streetlight on the right side
+2025-04-18_09-04-25;Approach the streetlight flag from the front side
+2025-04-10_10-09-49;Need to get closer to the streetlight on the right side
+2025-04-11_13-08-27;Move closer to the large tree ahead
+2025-05-03_16-41-19;Need to get closer to the streetlight on the right side
+2025-04-28_07-33-38;Move closer to the large tree ahead
+2025-04-24_06-46-07;Approach the streetlight from the right side
+2025-04-22_14-56-37;Suggest moving closer to the camera on the right side
+2025-04-23_17-46-31;Need to get closer to the streetlight on the right side
+2025-04-23_16-52-13;Need to get closer to the tree on the side
+2025-05-03_08-29-39;Need to get closer to the streetlight on the right side
+2025-04-23_17-52-14;Need to get closer to the streetlight on the right side
+2025-04-13_12-00-43;Need to get closer to the streetlight on the right side
+2025-04-19_08-36-24;Need to get closer to the streetlight on the right side
+2025-04-23_15-41-26;Need to get closer to the tree on the side
+2025-04-24_07-21-56;Approach the middle streetlight from the left side
+2025-04-18_09-48-41;Move closer to the sign on the front side
+2025-04-20_10-06-42;Need to get closer to the streetlight on the right side
+2025-04-13_08-25-54;Need to get closer to the streetlight on the right side
+2025-04-27_10-38-22;Need to get closer to the streetlight on the right side
+2025-04-23_17-36-23;Need to get closer to the streetlight on the right side
+2025-05-01_15-20-36;Approach the streetlight ahead from the front side
+2025-04-28_11-44-48;Need to get closer to the streetlight on the right side
+2025-05-02_10-56-14;Approach the tree from the left side
+2025-04-29_09-25-16;Approach the middle streetlight from the left side
+2025-04-14_16-07-43;Get closer to the small lamp post on the left side
+2025-05-02_08-06-12;Need to get closer to the streetlight on the right side
+2025-05-01_17-40-11;Suggest moving closer to the camera on the right side
+2025-04-29_09-26-18;Approach the middle streetlight from the left side
+2025-04-24_07-24-35;Approach the middle streetlight from the left side
+2025-04-24_12-01-29;Need to get closer to the tree on the side
+2025-04-13_17-46-08;Move closer to the goal on the right side
+2025-05-02_08-27-33;Need to get closer to the streetlight on the right side
+2025-05-02_17-26-21;Need to get closer to the streetlight on the right side
+2025-04-24_11-34-14;Approach the streetlight from the right side
+2025-04-11_11-44-49;Move closer to the large tree ahead
+2025-04-13_08-42-37;Need to get closer to the streetlight on the right side
+2025-04-10_13-08-25;Move closer to the goal on the right side
+2025-04-29_09-38-03;Approach the streetlight ahead from the front side
+2025-04-11_10-23-26;Move closer to the large tree ahead
+2025-04-25_12-11-29;Approach the streetlight ahead from the front side
+2025-04-15_11-28-12;Need to get closer to the streetlight on the right side
+2025-04-28_10-38-56;Approach the middle streetlight from the left side
+2025-04-28_10-41-16;Approach the streetlight from the right side
+2025-05-02_17-25-31;Need to get closer to the streetlight on the right side
+2025-04-28_08-33-15;Need to get closer to the streetlight on the right side
+2025-04-18_17-12-38;Need to get closer to the streetlight on the right side
+2025-04-24_07-24-18;Approach the streetlight from the right side
+2025-04-23_07-17-12;Need to get closer to the streetlight on the right side
+2025-04-20_14-57-06;Need to get closer to the streetlight on the right side
+2025-04-27_10-42-51;Need to get closer to the streetlight on the right side
+2025-04-28_10-40-12;Approach the middle streetlight from the left side
+2025-05-02_17-21-59;Need to get closer to the streetlight on the right side
+2025-04-20_09-59-23;Approach the streetlight flag from the side
+2025-04-24_07-46-49;Approach the streetlight from the right side
+2025-04-23_09-58-48;Approach the fire hydrant from the right side
+2025-04-23_11-18-41;Need to get closer to the streetlight on the right side
+2025-04-15_07-47-49;Need to get closer to the streetlight on the right side
+2025-04-27_13-17-15;Need to get closer to the streetlight on the right side
+2025-04-10_10-36-15;Get closer to the front camera pole
+2025-04-19_08-58-57;Need to get closer to the streetlight on the right side
+2025-04-28_10-18-25;Need to get closer to the streetlight on the right side
+2025-04-30_14-28-32;Need to get closer to the streetlight on the right side
+2025-04-13_09-59-23;Need to get closer to the streetlight on the right side
+2025-04-19_14-33-58;Need to get closer to the streetlight on the right side
+2025-04-28_17-25-41;Need to get closer to the streetlight on the right side
+2025-04-19_09-02-28;Need to get closer to the streetlight on the right side
+2025-04-11_17-28-29;Need to get closer to the streetlight on the right side
+2025-04-28_07-59-54;Move closer to the large tree ahead
+2025-04-24_07-43-57;Approach the middle streetlight from the left side
+2025-04-23_15-12-51;Suggest moving closer to the tree on the right side
+2025-04-19_15-27-44;Need to get closer to the streetlight on the right side
+2025-04-13_07-33-59;Need to get closer to the streetlight on the right side
+2025-04-22_14-16-30;Need to get closer to the streetlight on the right side
+2025-04-14_10-55-02;Move closer to the tree on the right side from the front left
+2025-04-23_14-04-19;Need to get closer to the streetlight on the right side
+2025-04-23_17-50-13;Need to get closer to the streetlight on the right side
+2025-04-20_08-30-46;Need to get closer to the streetlight on the right side
+2025-04-29_09-24-59;Approach the middle streetlight from the left side
+2025-04-20_14-59-31;Need to get closer to the streetlight on the right side
+2025-04-20_10-32-55;Need to get closer to the streetlight on the right side
+2025-04-13_09-49-20;Need to get closer to the streetlight on the right side
+2025-04-24_11-32-51;Approach the streetlight from the right side
+2025-05-02_08-21-14;Need to get closer to the streetlight on the right side
+2025-04-14_11-56-03;Move closer to the road sign in the front middle
+2025-04-30_14-09-06;Suggest moving closer to the camera on the right side
+2025-04-28_10-38-07;Approach the middle streetlight from the left side
+2025-04-13_07-21-24;Need to get closer to the streetlight on the right side
+2025-04-13_08-25-30;Need to get closer to the streetlight on the right side
+2025-04-30_08-06-48;Approach the tree from the right side
+2025-04-10_16-01-17;Approach the sculpture in front
+2025-04-28_08-56-34;Move closer to the large tree ahead
+2025-04-23_15-12-15;Suggest moving closer to the tree on the right side
+2025-04-28_09-34-15;Need to get closer to the streetlight on the right side
+2025-04-14_07-34-10;Please approach the front of the middle tree ahead from the front side
+2025-04-24_07-41-17;Approach the streetlight from the right side
+2025-04-10_09-43-27;Need to get closer to the streetlight on the right side
+2025-04-18_08-17-27;Need to get closer to the streetlight on the right side
+2025-04-23_14-46-21;Suggest moving closer to the tree on the right side
+2025-04-23_10-17-01;Suggest moving closer to the fire hydrant
+2025-04-22_14-57-49;Suggest moving closer to the camera on the right side
+2025-04-13_08-24-41;Need to get closer to the streetlight on the right side
+2025-04-11_17-08-55;Suggest moving closer to the signboard on the right side
+2025-04-23_14-03-39;Need to get closer to the streetlight on the right side
+2025-04-24_11-29-57;Approach the streetlight from the right side
+2025-04-23_14-42-54;Suggest moving closer to the tree on the right side
+2025-04-28_11-45-35;Need to get closer to the streetlight on the right side
+2025-04-21_13-42-40;Need to get closer to the streetlight on the right side
+2025-04-23_09-59-27;Approach the fire hydrant from the right side
+2025-04-27_13-19-53;Need to get closer to the streetlight on the right side
+2025-05-03_16-41-36;Need to get closer to the streetlight on the right side
+2025-04-18_13-19-33;Approach the fire hydrant from the right side
+2025-04-15_11-17-10;Need to get closer to the streetlight on the right side
+2025-05-02_08-11-25;Need to get closer to the streetlight on the right side
+2025-05-02_08-25-42;Need to get closer to the streetlight on the right side
+2025-04-24_06-53-27;Approach the middle streetlight from the left side
+2025-04-11_11-42-12;Move closer to the large tree ahead
+2025-04-21_14-52-28;Suggest moving closer to the camera on the right side
+2025-04-23_07-15-46;Need to get closer to the streetlight on the right side
+2025-05-03_08-29-17;Need to get closer to the streetlight on the right side
+2025-04-27_13-18-59;Need to get closer to the streetlight on the right side
+2025-04-27_10-41-08;Need to get closer to the streetlight on the right side
+2025-04-23_09-49-02;Suggest moving closer to the tree on the right side
+2025-04-25_15-12-43;Suggest moving closer to the tree on the right side
+2025-04-13_09-47-37;Need to get closer to the streetlight on the right side
+2025-04-11_17-09-13;Move closer to the signboard on the left side
+2025-04-28_09-17-17;Need to get closer to the streetlight on the right side
+2025-04-11_08-56-09;Move closer to the large tree ahead
+2025-04-18_08-16-40;Need to get closer to the streetlight on the right side
+2025-04-28_11-42-51;Need to get closer to the streetlight on the right side
+2025-04-23_17-33-37;Need to get closer to the streetlight on the right side
+2025-04-23_13-24-07;Need to get closer to the tree on the side
+2025-05-02_17-28-04;Need to get closer to the streetlight on the right side
+2025-04-11_17-11-15;Suggest moving closer to the signboard on the right side
+2025-04-30_09-24-34;Need to get closer to the streetlight on the right side
+2025-04-13_10-00-12;Need to get closer to the streetlight on the right side
+2025-04-28_10-39-35;Approach the middle streetlight from the left side
+2025-04-18_08-21-34;Need to get closer to the streetlight on the right side
+2025-05-02_08-29-58;Need to get closer to the streetlight on the right side
+2025-04-15_07-45-24;Need to get closer to the streetlight on the right side
+2025-04-18_13-50-35;Need to get closer to the streetlight on the right side
+2025-05-01_15-20-11;Approach the streetlight ahead from the front side
+2025-04-23_11-07-06;Need to get closer to the streetlight on the right side
+2025-04-23_17-34-58;Need to get closer to the streetlight on the right side
+2025-04-11_15-46-37;Need to get closer to the streetlight on the right side
+2025-04-09_09-55-26;Move closer to the monitoring area ahead
+2025-04-11_17-33-44;Suggest moving closer to the roadside pole on the right side
+2025-04-24_06-49-24;Approach the middle streetlight from the left side
+2025-04-11_11-44-10;Move closer to the large tree ahead
+2025-04-18_14-13-45;Need to get closer to the streetlight on the right side
+2025-04-21_13-19-32;Suggest moving closer to the camera on the right side
+2025-04-22_15-17-31;Need to get closer to the streetlight on the right side
+2025-04-25_15-33-22;Suggest moving closer to the tree on the right side
+2025-04-25_15-07-34;Suggest moving closer to the tree on the right side
+2025-04-11_17-26-58;Need to get closer to the streetlight on the right side
+2025-04-13_07-35-50;Need to get closer to the streetlight on the right side
+2025-04-19_14-36-07;Need to get closer to the streetlight on the right side
+2025-04-23_09-58-27;Approach the fire hydrant from the right side
+2025-04-23_07-16-48;Need to get closer to the streetlight on the right side
+2025-04-20_15-45-34;Suggest moving closer to the camera on the right side
+2025-04-25_16-01-06;Please approach the building from the left side
+2025-04-11_10-24-54;Move closer to the large tree ahead
+2025-04-15_17-13-41;Need to get closer to the streetlight on the right side
+2025-05-03_16-45-00;Need to get closer to the streetlight on the right side
+2025-04-23_17-37-09;Need to get closer to the streetlight on the right side
+2025-04-28_17-22-20;Need to get closer to the streetlight on the right side
+2025-04-11_17-09-54;Move closer to the signboard on the left side
+2025-04-21_14-25-35;Need to get closer to the streetlight on the right side
+2025-04-23_07-15-01;Need to get closer to the streetlight on the right side
+2025-05-02_17-24-43;Need to get closer to the streetlight on the right side
+2025-05-01_15-19-47;Approach the streetlight ahead from the front side
+2025-04-13_07-33-35;Need to get closer to the streetlight on the right side
+2025-04-22_08-44-33;Need to get closer to the streetlight on the right side
+2025-04-24_07-43-32;Approach the streetlight from the right side
+2025-04-28_10-39-14;Approach the middle streetlight from the left side
+2025-04-24_06-54-24;Approach the streetlight from the right side
+2025-04-15_17-10-31;Need to get closer to the streetlight on the right side
+2025-04-13_07-21-02;Need to get closer to the streetlight on the right side
+2025-04-29_09-28-50;Approach the streetlight from the right side
+2025-04-13_11-59-49;Need to get closer to the streetlight on the right side
+2025-04-28_10-38-26;Approach the middle streetlight from the left side
+2025-04-22_08-17-53;Suggest moving closer to the camera on the right side
+2025-04-13_10-54-14;Need to get closer to the streetlight on the right side
+2025-05-02_17-28-55;Need to get closer to the streetlight on the right side
+2025-04-24_15-23-07;Suggest moving closer to the tree on the right side
+2025-04-27_10-46-54;Need to get closer to the streetlight on the right side
+2025-04-23_16-02-16;Suggest moving closer to the tree on the right side
+2025-04-20_10-07-24;Need to get closer to the streetlight on the right side
+2025-04-30_14-29-53;Need to get closer to the streetlight on the right side
+2025-04-23_17-21-51;Need to get closer to the tree on the side
+2025-04-21_15-13-12;Need to get closer to the streetlight on the right side
+2025-04-15_10-51-25;Need to get closer to the streetlight on the right side
+2025-04-23_11-03-11;Need to get closer to the streetlight on the right side
+2025-04-25_15-11-33;Suggest moving closer to the tree on the right side
+2025-04-23_07-16-06;Need to get closer to the streetlight on the right side
+2025-04-10_06-51-13;Need to get closer to the streetlight on the right side
+2025-04-22_14-18-30;Need to get closer to the streetlight on the right side
+2025-04-24_07-25-30;Approach the streetlight from the right side
+2025-04-21_13-18-36;Suggest moving closer to the camera on the right side
+2025-04-25_15-57-57;Please approach the building from the left side
+2025-04-21_15-12-20;Need to get closer to the streetlight on the right side
+2025-04-27_13-14-26;Need to get closer to the streetlight on the right side
+2025-04-23_17-35-40;Need to get closer to the streetlight on the right side
+2025-04-28_08-35-26;Need to get closer to the streetlight on the right side
+2025-04-20_15-43-48;Suggest moving closer to the camera on the right side
+2025-04-10_13-15-15;Approach the lifebuoy from the front side
+2025-04-23_14-02-43;Need to get closer to the streetlight on the right side
+2025-04-23_15-08-40;Suggest moving closer to the tree on the right side
+2025-04-15_07-46-08;Need to get closer to the streetlight on the right side
+2025-04-13_17-46-59;Move closer to the goal on the right side
+2025-05-02_17-30-25;Need to get closer to the streetlight on the right side
+2025-04-29_09-25-56;Approach the middle streetlight from the left side
+2025-04-24_07-25-59;Approach the middle streetlight from the left side
+2025-04-20_10-35-11;Need to get closer to the streetlight on the right side
+2025-04-23_11-05-47;Need to get closer to the streetlight on the right side
+2025-04-28_08-37-59;Need to get closer to the streetlight on the right side
+2025-04-10_08-01-14;Need to get closer to the streetlight on the right side
+2025-04-28_14-37-39;Need to get closer to the streetlight on the right side
+2025-04-28_11-47-17;Need to get closer to the streetlight on the right side
+2025-04-14_08-02-54;Move closer to the tree on the right side from the front left
+2025-04-13_10-02-00;Need to get closer to the streetlight on the right side
+2025-04-18_15-04-49;Need to get closer to the streetlight on the right side
+2025-04-22_14-14-50;Need to get closer to the streetlight on the right side
+2025-05-02_08-08-20;Need to get closer to the streetlight on the right side
+2025-05-01_17-46-40;Suggest moving closer to the camera on the right side
+2025-04-24_07-18-49;Approach the middle streetlight from the left side
+2025-04-18_13-49-07;Need to get closer to the streetlight on the right side
+2025-05-02_08-23-17;Need to get closer to the streetlight on the right side
+2025-04-17_09-26-35;Approach the streetlight flag from the front side
+2025-04-24_07-28-14;Approach the streetlight from the right side
+2025-04-28_08-58-09;Need to get closer to the streetlight on the right side
+2025-04-10_09-44-32;Need to get closer to the streetlight on the right side
+2025-04-20_15-42-00;Suggest moving closer to the camera on the right side
+2025-04-28_09-19-10;Need to get closer to the streetlight on the right side
+2025-04-25_11-59-44;Approach the middle streetlight from the left side
+2025-04-20_10-10-17;Need to get closer to the streetlight on the right side
+2025-04-15_11-16-20;Need to get closer to the streetlight on the right side
+2025-05-02_08-20-29;Need to get closer to the streetlight on the right side
+2025-04-25_12-01-23;Approach the middle streetlight from the left side
+2025-04-13_10-51-36;Need to get closer to the streetlight on the right side
+2025-04-18_15-07-28;Need to get closer to the streetlight on the right side
+2025-05-03_16-53-40;Need to get closer to the streetlight on the right side
+2025-05-02_18-00-11;Need to get closer to the streetlight on the right side
+2025-04-24_07-42-25;Approach the streetlight from the right side
+2025-04-11_17-22-12;Need to get closer to the streetlight on the right side
+2025-05-02_17-58-08;Need to get closer to the streetlight on the right side
+2025-05-03_08-23-11;Need to get closer to the streetlight on the right side
+2025-04-25_12-00-54;Approach the streetlight from the right side
+2025-05-02_17-21-22;Need to get closer to the streetlight on the right side
+2025-04-20_08-36-00;Need to get closer to the streetlight on the right side
+2025-04-10_09-42-20;Need to get closer to the streetlight on the right side
+2025-04-24_07-40-15;Approach the middle streetlight from the left side
+2025-05-02_08-25-23;Need to get closer to the streetlight on the right side
+2025-04-25_10-12-44;Suggest moving closer to the tree on the right side
+2025-04-11_16-59-36;Need to get closer to the streetlight on the right side
+2025-04-13_07-21-51;Need to get closer to the streetlight on the right side
+2025-04-09_09-50-14;Get closer to the monitoring on the left side
+2025-04-13_12-11-23;Need to get closer to the streetlight on the right side
+2025-05-02_08-07-18;Approach the streetlight from the right side
+2025-04-11_08-55-42;Move closer to the large tree ahead
+2025-04-11_17-10-43;Suggest moving closer to the signboard on the right side
+2025-04-29_09-29-34;Approach the streetlight from the right side
+2025-05-02_08-16-55;Need to get closer to the streetlight on the right side
+2025-04-22_14-58-34;Suggest moving closer to the camera on the right side
+2025-04-25_15-34-47;Suggest moving closer to the tree on the right side
+2025-04-19_08-59-46;Need to get closer to the streetlight on the right side
+2025-04-17_09-28-33;Need to get closer to the streetlight on the right side
+2025-04-13_09-48-03;Need to get closer to the streetlight on the right side
+2025-04-24_07-45-21;Approach the middle streetlight from the left side
+2025-04-20_15-41-13;Suggest moving closer to the camera on the right side
+2025-04-13_10-01-05;Need to get closer to the streetlight on the right side
+2025-04-13_12-10-46;Need to get closer to the streetlight on the right side
+2025-04-17_09-26-30;Need to get closer to the streetlight on the right side
+2025-04-09_09-28-58;Suggest moving closer to the white pillar on the front side
+2025-04-14_14-47-15;Move closer to the road sign in the front middle
+2025-04-19_09-26-27;Need to get closer to the streetlight on the right side
+2025-04-11_15-51-59;Need to get closer to the streetlight on the right side
+2025-04-24_15-27-42;Suggest moving closer to the tree on the right side
+2025-04-11_16-55-00;Move closer to the large tree ahead
+2025-04-23_09-50-52;Suggest moving closer to the tree on the right side
+2025-04-20_14-58-35;Need to get closer to the streetlight on the right side
+2025-04-13_08-27-17;Need to get closer to the streetlight on the right side
+2025-04-25_15-10-16;Suggest moving closer to the tree on the right side
+2025-04-23_10-28-05;Need to get closer to the streetlight on the right side
+2025-04-28_09-32-29;Need to get closer to the streetlight on the right side
+2025-04-11_10-22-40;Move closer to the large tree ahead
+2025-04-21_14-49-07;Suggest moving closer to the camera on the right side
+2025-04-18_13-32-48;Move closer to the fire hydrant on the front side
+2025-04-17_10-31-18;Need to get closer to the streetlight on the right side
+2025-04-18_14-15-19;Need to get closer to the speed limit sign on the front side
+2025-04-20_14-55-17;Need to get closer to the streetlight on the right side
+2025-04-13_08-43-02;Need to get closer to the streetlight on the right side
+2025-05-02_17-23-37;Need to get closer to the streetlight on the right side
+2025-04-24_10-09-30;Suggest moving closer to the tree on the right side
+2025-04-28_10-40-54;Approach the streetlight from the right side
+2025-04-20_15-47-37;Need to get closer to the tree on the side
+2025-04-17_10-33-07;Need to get closer to the streetlight on the right side
+2025-04-25_10-17-08;Suggest moving closer to the tree on the right side
+2025-04-11_08-53-08;Move closer to the large tree ahead
+2025-04-13_07-54-22;Need to get closer to the streetlight on the right side
+2025-04-24_11-20-31;Need to get closer to the streetlight on the right side
+2025-04-23_14-53-52;Need to get closer to the warning sign on the side
+2025-04-10_09-57-19;Need to get closer to the streetlight on the right side
+2025-04-29_09-28-26;Approach the streetlight from the right side
+2025-04-11_11-43-25;Move closer to the large tree ahead
+2025-04-09_09-51-02;Get closer to the monitoring on the left side
+2025-04-23_16-04-57;Suggest moving closer to the tree on the right side
+2025-04-22_14-43-21;Suggest moving closer to the camera on the right side
+2025-04-18_12-30-09;Move closer to the signboard on the left side
+2025-04-29_09-29-11;Approach the streetlight from the right side
+2025-04-21_14-27-49;Need to get closer to the streetlight on the right side
+2025-04-23_09-47-47;Suggest moving closer to the tree on the right side
+2025-04-24_15-26-21;Suggest moving closer to the tree on the right side
+2025-04-25_12-03-14;Approach the middle streetlight from the left side
+2025-04-19_09-01-34;Need to get closer to the streetlight on the right side
+2025-05-03_16-53-59;Need to get closer to the streetlight on the right side
+2025-04-28_06-36-47;Move closer to the large tree ahead
+2025-04-28_08-37-01;Need to get closer to the streetlight on the right side
+2025-05-03_16-49-27;Need to get closer to the streetlight on the right side
+2025-04-18_08-21-00;Need to get closer to the streetlight on the right side
+2025-05-02_08-29-35;Need to get closer to the streetlight on the right side
+2025-04-15_11-27-46;Need to get closer to the streetlight on the right side
+2025-04-23_17-53-32;Need to get closer to the streetlight on the right side
+2025-04-30_08-46-39;Approach the tree from the right side
+2025-04-24_10-10-45;Suggest moving closer to the tree on the right side
+2025-04-18_14-12-09;Need to get closer to the streetlight on the right side
+2025-05-02_08-09-15;Need to get closer to the streetlight on the right side
+2025-04-27_13-16-21;Need to get closer to the streetlight on the right side
+2025-04-25_15-31-31;Suggest moving closer to the tree on the right side
+2025-05-02_17-23-54;Need to get closer to the streetlight on the right side
+2025-04-15_11-25-02;Need to get closer to the streetlight on the right side
+2025-04-28_08-55-45;Need to get closer to the streetlight on the right side
+2025-05-03_07-48-28;Need to get closer to the streetlight on the right side
+2025-04-24_06-46-27;Approach the middle streetlight from the left side
+2025-04-28_10-39-53;Approach the middle streetlight from the left side
+2025-04-15_11-02-21;Need to get closer to the streetlight on the right side
+2025-04-24_07-21-32;Approach the streetlight from the right side
+2025-04-23_14-48-09;Suggest moving closer to the tree on the right side
+2025-05-02_08-02-08;Need to get closer to the streetlight on the right side
+2025-04-24_09-47-01;Suggest moving closer to the tree on the right side
+2025-04-13_11-58-55;Need to get closer to the streetlight on the right side
+2025-04-13_08-46-29;Need to get closer to the streetlight on the right side
+2025-04-21_15-15-59;Need to get closer to the streetlight on the right side
+2025-04-17_09-29-07;Need to get closer to the streetlight on the right side
+2025-04-23_11-19-54;Need to get closer to the streetlight on the right side
+2025-04-13_11-57-29;Need to get closer to the streetlight on the right side
+2025-04-23_15-09-36;Suggest moving closer to the tree on the right side
+2025-04-28_09-33-01;Need to get closer to the streetlight on the right side
+2025-04-30_12-30-37;Approach the tree from the right side
+2025-04-19_08-39-35;Need to get closer to the streetlight on the right side
+2025-04-28_09-30-45;Need to get closer to the streetlight on the right side
+2025-04-13_09-47-13;Need to get closer to the streetlight on the right side
+2025-04-28_10-42-02;Approach the streetlight from the right side
+2025-04-24_09-46-04;Suggest moving closer to the tree on the right side
+2025-04-28_09-15-40;Need to get closer to the streetlight on the right side
+2025-04-21_13-21-17;Suggest moving closer to the camera on the right side
+2025-04-25_12-05-47;Approach the middle streetlight from the left side
+2025-04-28_10-54-01;Approach the streetlight ahead from the front side
+2025-04-20_10-30-48;Need to get closer to the streetlight on the right side
+2025-04-24_07-41-35;Approach the middle streetlight from the left side
+2025-04-28_10-40-34;Approach the streetlight from the right side
+2025-04-23_07-40-34;Need to get closer to the streetlight on the right side
+2025-04-30_09-53-32;Need to get closer to the streetlight on the right side
+2025-04-21_14-53-14;Suggest moving closer to the camera on the right side
+2025-04-11_16-57-36;Need to get closer to the streetlight on the right side
+2025-04-22_08-17-02;Suggest moving closer to the camera on the right side
+2025-04-30_12-23-44;Approach the tree from the right side
+2025-04-24_07-50-07;Approach the streetlight ahead from the front side
+2025-04-23_09-46-56;Suggest moving closer to the tree on the right side
+2025-04-20_15-43-15;Suggest moving closer to the camera on the right side
+2025-05-03_08-18-01;Need to get closer to the streetlight on the right side
+2025-04-24_09-48-40;Suggest moving closer to the tree on the right side
+2025-04-13_09-49-48;Need to get closer to the streetlight on the right side
+2025-04-25_15-09-01;Suggest moving closer to the tree on the right side
+2025-04-25_15-31-55;Suggest moving closer to the tree on the right side
+2025-04-28_11-42-01;Need to get closer to the streetlight on the right side
+2025-04-28_10-16-44;Need to get closer to the streetlight on the right side
+2025-04-22_08-39-35;Need to get closer to the streetlight on the right side
+2025-04-21_13-22-09;Suggest moving closer to the camera on the right side
+2025-04-28_14-39-48;Need to get closer to the streetlight on the right side
+2025-04-11_10-25-18;Move closer to the large tree ahead
+2025-05-02_08-05-09;Need to get closer to the streetlight on the right side
+2025-05-03_08-25-53;Need to get closer to the streetlight on the right side
+2025-04-13_09-44-49;Need to get closer to the streetlight on the right side
+2025-04-27_13-59-11;Move closer to the large tree ahead
+2025-04-11_08-54-25;Move closer to the large tree ahead
+2025-04-23_09-59-08;Approach the fire hydrant from the right side
+2025-04-23_14-03-20;Need to get closer to the streetlight on the right side
+2025-04-24_09-48-16;Suggest moving closer to the tree on the right side
+2025-04-13_07-22-36;Need to get closer to the streetlight on the right side
+2025-04-04_10-06-08;Please approach the tree from the near side
+2025-04-28_17-21-32;Need to get closer to the streetlight on the right side
+2025-04-16_09-45-00;Approach the bicycle from the front side
+2025-04-13_10-53-01;Need to get closer to the streetlight on the right side
+2025-04-13_07-34-41;Need to get closer to the streetlight on the right side
+2025-04-20_15-22-27;Need to get closer to the streetlight on the right side
+2025-04-27_11-31-19;Move closer to the large tree ahead
+2025-04-10_16-36-48;Need to get closer to the streetlight on the right side
+2025-04-22_14-15-39;Need to get closer to the streetlight on the right side
+2025-05-02_17-26-54;Need to get closer to the streetlight on the right side
+2025-04-20_10-08-10;Need to get closer to the streetlight on the right side
+2025-04-27_10-45-17;Need to get closer to the streetlight on the right side
+2025-04-17_09-27-34;Need to get closer to the streetlight on the right side
+2025-04-24_06-57-05;Approach the streetlight ahead from the front side
+2025-04-24_11-33-12;Approach the middle streetlight from the left side
+2025-04-28_11-43-26;Need to get closer to the streetlight on the right side
+2025-04-11_17-22-41;Need to get closer to the streetlight on the right side
+2025-05-02_08-21-38;Need to get closer to the streetlight on the right side
+2025-04-11_08-55-13;Move closer to the large tree ahead
+2025-04-23_07-41-25;Need to get closer to the streetlight on the right side
+2025-05-01_17-41-24;Suggest moving closer to the camera on the right side
+2025-04-30_07-54-16;Approach the tree from the right side
+2025-04-15_10-50-05;Need to get closer to the streetlight on the right side
+2025-04-19_09-00-42;Need to get closer to the streetlight on the right side
+2025-04-21_15-14-03;Need to get closer to the streetlight on the right side
+2025-04-24_15-27-14;Suggest moving closer to the tree on the right side
+2025-04-25_15-34-21;Suggest moving closer to the tree on the right side
+2025-04-23_16-03-03;Suggest moving closer to the tree on the right side
+2025-04-24_07-22-55;Approach the streetlight from the right side
+2025-05-02_08-26-56;Need to get closer to the streetlight on the right side
+2025-04-11_17-09-36;Suggest moving closer to the signboard on the right side
+2025-04-23_14-44-54;Suggest moving closer to the tree on the right side
+2025-04-22_15-16-28;Need to get closer to the streetlight on the right side
+2025-04-24_15-11-49;Need to get closer to the tree on the side
+2025-04-20_08-34-06;Need to get closer to the streetlight on the right side
+2025-04-13_10-55-23;Need to get closer to the streetlight on the right side
+2025-04-25_10-11-54;Suggest moving closer to the tree on the right side
+2025-04-20_10-34-13;Need to get closer to the streetlight on the right side
+2025-04-18_13-19-16;Approach the fire hydrant from the right side
+2025-05-03_16-41-00;Need to get closer to the streetlight on the right side
+2025-04-11_16-58-19;Need to get closer to the streetlight on the right side
+2025-04-27_13-20-44;Need to get closer to the streetlight on the right side
+2025-05-02_18-04-31;Need to get closer to the streetlight on the right side
+2025-04-29_09-28-04;Approach the streetlight from the right side
+2025-04-10_12-25-36;Need to get closer to the streetlight on the right side
+2025-04-13_08-44-04;Need to get closer to the streetlight on the right side
+2025-05-02_08-04-46;Need to get closer to the streetlight on the right side
+2025-04-27_13-15-19;Need to get closer to the streetlight on the right side
+2025-04-24_06-53-01;Approach the streetlight from the right side
+2025-04-13_07-53-01;Need to get closer to the streetlight on the right side
+2025-04-24_07-19-50;Approach the streetlight from the right side
+2025-04-13_07-32-32;Need to get closer to the streetlight on the right side
+2025-04-21_14-24-40;Need to get closer to the streetlight on the right side
+2025-05-03_16-54-35;Need to get closer to the streetlight on the right side
+2025-04-10_06-49-16;Need to get closer to the streetlight on the right side
+2025-04-28_08-31-21;Need to get closer to the streetlight on the right side
+2025-04-19_09-21-37;Need to get closer to the streetlight on the right side
+2025-04-25_12-07-17;Approach the streetlight from the right side
+2025-04-17_09-29-48;Need to get closer to the streetlight on the right side
+2025-04-25_15-30-38;Suggest moving closer to the tree on the right side
+2025-04-19_14-33-05;Need to get closer to the streetlight on the right side
+2025-04-17_10-20-33;Move closer to the sign on the front side
+2025-04-09_09-50-37;Get closer to the monitoring on the left side
+2025-04-22_08-20-08;Suggest moving closer to the camera on the right side
+2025-04-22_08-43-16;Need to get closer to the streetlight on the right side
+2025-04-21_13-46-21;Need to get closer to the streetlight on the right side
+2025-04-23_09-18-36;Need to get closer to the tree on the side
+2025-04-28_11-41-23;Need to get closer to the streetlight on the right side
+2025-04-28_10-17-09;Need to get closer to the streetlight on the right side
+2025-04-22_08-22-16;Suggest moving closer to the camera on the right side
+2025-04-21_13-47-49;Need to get closer to the streetlight on the right side
+2025-04-13_12-12-09;Need to get closer to the streetlight on the right side
+2025-04-13_08-43-36;Need to get closer to the streetlight on the right side
+2025-04-11_08-54-50;Move closer to the large tree ahead
+2025-04-20_14-56-10;Need to get closer to the streetlight on the right side
+2025-04-11_17-11-33;Move closer to the signboard on the left side
+2025-04-20_15-21-10;Need to get closer to the streetlight on the right side
+2025-04-28_07-59-26;Move closer to the large tree ahead
+2025-04-19_09-23-07;Need to get closer to the streetlight on the right side
+2025-05-02_08-23-39;Need to get closer to the streetlight on the right side
+2025-04-22_08-18-45;Suggest moving closer to the camera on the right side
+2025-04-20_14-36-38;Need to get closer to the streetlight on the right side
