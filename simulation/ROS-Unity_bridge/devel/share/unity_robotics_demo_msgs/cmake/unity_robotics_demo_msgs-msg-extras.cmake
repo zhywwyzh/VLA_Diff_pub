@@ -1,2 +1,0 @@
-set(unity_robotics_demo_msgs_MESSAGE_FILES "/home/yang/VLA/UnityVisExample/ROS-Unity_bridge/src/unity_robotics_demo_msgs/msg/PosRot.msg;/home/yang/VLA/UnityVisExample/ROS-Unity_bridge/src/unity_robotics_demo_msgs/msg/UnityColor.msg")
-set(unity_robotics_demo_msgs_SERVICE_FILES "/home/yang/VLA/UnityVisExample/ROS-Unity_bridge/src/unity_robotics_demo_msgs/srv/ObjectPoseService.srv;/home/yang/VLA/UnityVisExample/ROS-Unity_bridge/src/unity_robotics_demo_msgs/srv/PositionService.srv")
