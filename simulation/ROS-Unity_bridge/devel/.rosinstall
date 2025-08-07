@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/yang/VLA/UnityVisExample/ROS-Unity_bridge/devel/setup.sh
