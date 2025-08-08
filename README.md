@@ -73,3 +73,54 @@ uv run VLA_Diff/Openpi/scripts/serve_policy.py policy:checkpoint --policy.config
 This will spin up a server that listens on port 8000 and waits for observations to be sent to it.
 Then run`VLA_Diff/Openpi/test/infer/evaluate_with_parquet.ipynb`
 for inference. The dataset and the pre-trained model checkpoint can be downloaded from `LXX3123` on ModelScope.
+
+## Set Up Simulation Environment
+### Notes:
+- Make sure all dependencies are installed before running these commands
+  - Unity Editor: Version 2022.3.61f1c1 (recommended for full compatibility)
+  - ROS: Noetic distribution installed and configured
+- Replace .zsh with .bash if you're using bash shell
+
+### 1. Download Models
+
+Run the following script to download required models:
+
+```bash
+Waiting for completion...
+```
+
+Open the downloaded models with unity and run the simulation scene.
+
+### 2. Setup ROS-Unity Bridge
+
+```bash
+cd VLA_Diff/simulation/ROS-Unity_bridge
+catkin_make    # Only needed if you haven't built before
+source devel/setup.zsh
+roslaunch ros_tcp_endpoint endpoint.launch
+```
+
+### 3. Run EGO-Planner
+
+
+```bash
+cd VLA_Diff/simulation/EGO-Planner-v2
+catkin_make    # Only needed if you haven't built before
+source devel/setup.zsh
+roslaunch ego_planner single_drone_interactive.launch
+```
+
+### 4. Spinning up a policy server and running inference
+
+```bash
+cd VLA_Diff/Openpi
+source .venv/bin/activate # Only needed if you are not in the environment of openpi
+uv run VLA_Diff/Openpi/scripts/serve_policy.py policy:checkpoint --policy.config=pi0_uav_low_mem_finetune --policy.dir=checkpoints/pi0_uav_low_mem_finetune/pi0_uav_low_mem_finetune_3w_0801/100000
+```
+
+### 5. Simulation testing
+
+```bash
+cd VLA_Diff/Openpi/test/infer
+python test_simulation.py
+```
