@@ -5,6 +5,7 @@ import logging
 import sys
 import os
 import re
+import pdb
 
 import imageio.v2 as imageio
 import matplotlib.pyplot as plt
@@ -14,7 +15,6 @@ import time
 from sensor_msgs.msg import Image
 
 import rclpy
-from rclpy.node import Node
 from rclpy.qos import QoSProfile
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import CompressedImage, CameraInfo
@@ -26,11 +26,13 @@ import cv2
 from cv_bridge import CvBridge
 import threading
 from utils.vlm.openai_serve import open_serve
-from utils.param import COMMAND_TYPE
+from utils.param import COMMAND_TYPE, VLA_STATE
 
 from openpi_client import websocket_client_policy as _websocket_client_policy
 
-class UAVPolicyNode(Node):
+from base_policy import BasePolicyNode
+
+class UAVPolicyNode(BasePolicyNode):
     def __init__(self):
         # ROS2节点初始化
         super().__init__('uav_policy_node')
@@ -44,32 +46,29 @@ class UAVPolicyNode(Node):
         # 创建CV桥接器
         self.bridge = CvBridge()
 
-        # 存储最新的状态的图像
-        self.current_state = None        
+        # 存储最新的状态和图像
         self.current_image = None
         self.current_wrist_image = None
-        self.state_lock = threading.Lock()
-        self.image_lock = threading.Lock()
-        self.depth_lock = threading.Lock()
         self.first_image = None
         self.first_image_received = False
         self.count = 0
         self.save_count = 0  # 添加保存计数器
         self.image_save_count = 0  # 添加图像保存计数器
         self.last_state = [0, 0, 1, 0, 0, 0]
-        self.last_inference_time = None  # 添加上次推理时间记录
+        self.last_plan_time = None  # 添加上次推理时间记录
         self.inference_timeout = 5.0  # 设置推理超时时间（秒），可以根据需要调整
-        self.rgb_image = None
-        self.depth_image = None
-        self.depth_info = None
         self.save = None
         self.plan = True
-        self.command_content = ["door", (0,0,1,0,0,0), "fridge"]
+        self.command_content = ["door", (0, 0, 1.2, 0, 0, 0), "fridge"]
+        # self.command_content = ["fridge", (-16.146, 3.6, 0.877, 0, 0, 0), "fridge"]
         self.first_command = False
         self.command_type = COMMAND_TYPE.WAIT
         self.task_id_mllm = []
         self.task_id_vlm = []
         self.pub_goal = False
+        self.arrival_distance = 0.1
+        self.time_out = 10.0
+        self.vla_state = None
 
         # 创建图像保存目录
         self.image_save_dir = '/home/zhywwyzh/workspace/VLA_Diff/Openpi/test/infer/trail/saved_images'
@@ -78,27 +77,6 @@ class UAVPolicyNode(Node):
         # 创建模型输入图像保存目录
         self.model_input_dir = '/home/zhywwyzh/workspace/VLA_Diff/Openpi/test/infer/trail/model_input_images'
         os.makedirs(self.model_input_dir, exist_ok=True)
-
-        # 订阅无人机状态和图像话题
-        self.odom_sub = self.create_subscription(Odometry,
-                                                '/drone_0_visual_slam/odom',
-                                                self.odom_callback,
-                                                10)
-
-        self.image_sub = self.create_subscription(CompressedImage,
-                                                '/camera1/color/image/compressed',
-                                                self.image_callback,
-                                                10)
-
-        self.depth_sub = self.create_subscription(CompressedImage,
-                                                '/camera1/depth/image/compressed',
-                                                self.depth_callback,
-                                                10)
-
-        self.depth_info_sub = self.create_subscription(CameraInfo,
-                                                       'camera1/depth/info',
-                                                       self.depth_info_callback,
-                                                       10)
 
         # 订阅指令需求
         self.command_type_sub = self.create_subscription(Int32,
@@ -153,6 +131,7 @@ class UAVPolicyNode(Node):
             if not os.path.exists(self.tasks_jsonl_path):
                 logging.error(f"tasks.jsonl 文件不存在: {self.tasks_jsonl_path}")
                 return None
+
                 
             with open(self.tasks_jsonl_path, 'r') as f:
                 for line in f:
@@ -171,7 +150,7 @@ class UAVPolicyNode(Node):
         
         logging.warning(f"在 {self.tasks_jsonl_path} 中未找到 task_index {self.task_index} 对应的任务。")
         return None
-    
+
     def connect_websocket(self):
         """连接WebSocket服务器"""
         try:
@@ -182,59 +161,6 @@ class UAVPolicyNode(Node):
             self.get_logger().error("WebSocket连接失败，节点即将关闭")
             rclpy.shutdown()
 
-    def odom_callback(self, msg):
-        # print(f"state_lock:{self.state_lock.locked()}")
-        """处理无人机状态回调"""
-        with self.state_lock:
-            # 从Odometry消息中提取位置和姿态
-            position = msg.pose.pose.position
-            orientation = msg.pose.pose.orientation
-            
-            # 将四元数转换为欧拉角
-            roll, pitch, yaw = self.quaternion_to_euler(orientation.x, 
-                                                        orientation.y, 
-                                                        orientation.z, 
-                                                        orientation.w)
-            
-            # 更新当前状态: [x, y, z, roll, pitch, yaw]
-            self.current_state = np.array([
-                position.x, position.y, position.z,
-                roll, pitch, yaw
-            ])
-            # print(f"当前状态: {self.current_state}")
-    
-    def image_callback(self, msg):
-        """处理图像回调"""
-        try:
-            with self.image_lock:
-            # 将压缩图像转换为OpenCV格式
-                np_arr = np.frombuffer(msg.data, np.uint8)
-                cv_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-                self.rgb_image = cv_image.copy()
-                
-        except Exception as e:
-            logging.error(f"图像处理错误: {e}")
-
-    def depth_callback(self, msg):
-        """处理深度图回调"""
-        try:
-            with self.depth_lock:
-                np_arr = np.frombuffer(msg.data, np.uint8)
-                depth_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)  # 保留原始深度
-                # print(f"depth_image:{depth_image}")
-                
-                depth_m = depth_image[:,:,0]
-
-                depth_32 = depth_m.astype(np.float32) / 255.0 * 5.0
-                depth_32[depth_32 == 0] = 16.0
-
-                # 存储到类变量，供其他线程使用
-                self.depth_image = depth_32.copy()
-                # print(f"depth_image:{self.depth_image}")                  
-
-        except Exception as e:
-            logging.error(f"深度图处理错误: {e}")
-
     def command_type_callback(self, msg):
         """处理指令需求回调"""
         self.command_type = msg.data
@@ -244,35 +170,6 @@ class UAVPolicyNode(Node):
         """处理指令内容回调"""
         self.command_content.append(json.loads(msg.data))
 
-    def depth_info_callback(self, msg):
-        """处理深度相机参数回调"""
-        if self.depth_info is None:
-            height = msg.height
-            width = msg.width
-            fx = msg.k[0]
-            fy = msg.k[4]
-            cx = msg.k[2]
-            cy = msg.k[5]
-            self.depth_info = { 'height': height, 'width': width, 'fx': fx, 'fy': fy, 'cx': cx, 'cy': cy}
-
-    def quaternion_to_euler(self, x, y, z, w):
-        """将四元数转换为欧拉角 (roll, pitch, yaw)"""
-        # 这里实现了四元数到欧拉角的转换
-        t0 = +2.0 * (w * x + y * z)
-        t1 = +1.0 - 2.0 * (x * x + y * y)
-        roll = np.arctan2(t0, t1)
-        
-        t2 = +2.0 * (w * y - z * x)
-        t2 = +1.0 if t2 > +1.0 else t2
-        t2 = -1.0 if t2 < -1.0 else t2
-        pitch = np.arcsin(t2)
-        
-        t3 = +2.0 * (w * z + x * y)
-        t4 = +1.0 - 2.0 * (y * y + z * z)
-        yaw = np.arctan2(t3, t4)
-        
-        return roll, pitch, yaw
-    
     def prepare_image_for_inference(self, image):
         """准备推理用的图像，确保尺寸为256x256"""
         if image is None:
@@ -304,232 +201,157 @@ class UAVPolicyNode(Node):
         pose_msg.pose.orientation.x = 0.0
         pose_msg.pose.orientation.y = 0.0
         pose_msg.pose.orientation.z = 0.0
-        pose_msg.pose.orientation.w = 0.0
+        pose_msg.pose.orientation.w = 1.0
         self.action_pub.publish(pose_msg)
 
-    def euler_to_quaternion(self, roll, pitch, yaw):
-        """将欧拉角转换为四元数"""
-        # 这里实现了欧拉角到四元数的转换
-        cy = np.cos(yaw * 0.5)
-        sy = np.sin(yaw * 0.5)
-        cp = np.cos(pitch * 0.5)
-        sp = np.sin(pitch * 0.5)
-        cr = np.cos(roll * 0.5)
-        sr = np.sin(roll * 0.5)
-        
-        qw = cr * cp * cy + sr * sp * sy
-        qx = sr * cp * cy - cr * sp * sy
-        qy = cr * sp * cy + sr * cp * sy
-        qz = cr * cp * sy - sr * sp * cy
-        
-        return qx, qy, qz, qw
-    
-    def bbox_center(self, results):
-        if not results:
-            raise ValueError("Results list is empty")
-        bbox = results[0].get("bbox_2d", None)
-        if bbox is None or len(bbox) != 4:
-            raise ValueError("Invalid bbox_2d format")
-        x1, y1, x2, y2 = bbox
-        center_x = (x1 + x2) / 2
-        center_y = (y1 + y2) / 2
-        return center_x, center_y
-    
-    def euler_rpy_to_R(self, roll, pitch, yaw):
-        """R = Rz(yaw) @ Ry(pitch) @ Rx(roll)"""
-        sr, cr = np.sin(roll),  np.cos(roll)
-        sp, cp = np.sin(pitch), np.cos(pitch)
-        sy, cy = np.sin(yaw),   np.cos(yaw)
-        Rx = np.array([[1, 0, 0],
-                    [0, cr, -sr],
-                    [0, sr,  cr]], dtype=np.float64)
-        Ry = np.array([[ cp, 0, sp],
-                    [  0, 1,  0],
-                    [-sp, 0, cp]], dtype=np.float64)
-        Rz = np.array([[cy, -sy, 0],
-                    [sy,  cy, 0],
-                    [ 0,   0, 1]], dtype=np.float64)
-        return Rz @ Ry @ Rx
-
-    def _backproject(self, u, v, depth_value, fx, fy, cx, cy, mode="z"):
-        d = np.array([(u - cx) / fx, (v - cy) / fy, 1.0], dtype=np.float64)
-        if mode == "z":  # projective depth
-            Z = depth_value
-            return d * Z
-        elif mode == "range":  # ray length
-            s = d / np.linalg.norm(d)
-            return s * depth_value
-        else:
-            raise ValueError(f"Unknown depth mode: {mode}")
-
-    def pixel_to_world(self, results, depth_scale=1.0, window=0, depth_mode="z"):
-        # 取像素 & 深度（略，与你现有一致）...
-        u, v = self.bbox_center(results)
-        fx, fy, cx, cy = self.depth_info['fx'], self.depth_info['fy'], self.depth_info['cx'], self.depth_info['cy']
-
-        ui, vi = int(round(u)), int(round(v))
-        if window > 0:
-            u0, u1 = max(0, ui - window), min(self.depth_image.shape[1] - 1, ui + window)
-            v0, v1 = max(0, vi - window), min(self.depth_image.shape[0] - 1, vi + window)
-            patch = self.depth_image[v0:v1+1, u0:u1+1].astype(np.float64)
-            depth_raw = np.median(patch)
-        else:
-            depth_raw = float(self.depth_image[vi, ui])
-
-        depth_val = depth_raw * depth_scale
-        if not np.isfinite(depth_val) or depth_val <= 0:
-            raise ValueError(f"无效深度 depth={depth_val}")
-
-        # 相机像素 -> 相机坐标（根据 depth_mode 处理）
-        cam_point_cv = self._backproject(u, v, depth_val, fx, fy, cx, cy, depth_mode)
-
-        # 相机(OpenCV x右,y下,z前) -> 机器人(base_link x前,y左,z上)
-        R_cam_to_robot = np.array([
-            [ 0,  0,  1],   # x_robot =  z_cam
-            [-1,  0,  0],   # y_robot = -x_cam
-            [ 0, -1,  0]    # z_robot = -y_cam
-        ], dtype=np.float64)
-        cam_point_robot = R_cam_to_robot @ cam_point_cv
-
-        # 机器人 -> 世界（若 self.current_state 的 RPY 是 世界->机器人，则转置）
-        tx, ty, tz, roll, pitch, yaw = map(float, self.current_state.tolist())
-        Rrw = self.euler_rpy_to_R(roll, pitch, yaw).T
-        t_world = np.array([tx, ty, tz], dtype=np.float64) - [0.6, 0.0, 0.0]
-
-        world_point = Rrw @ cam_point_robot + t_world
-        return world_point
-
     def run_inference(self):
-        """执行推理循环"""
-        rate = self.create_rate(20)  # 20Hz
+        """执行推理"""
+        rate = self.create_rate(20)
         waypoint = None
-        print("任务开始")
+        self.vla_state = VLA_STATE.INIT
+        self.last_plan_time = None
+
+        # 以下2部分后续可用task id直接替代
+        def is_waypoint_cmd(cmd) -> bool:
+            if isinstance(cmd, (list, tuple, np.ndarray)):
+                try:
+                    arr = np.array(cmd, dtype=float).reshape(-1)
+                    return arr.size >= 3 and np.all(np.isfinite(arr[:3]))
+                except Exception:
+                    return False
+            return False
+        
+        def is_label_cmd(cmd) -> bool:
+            return isinstance(cmd, str) and len(cmd) > 0
+
+        # input("Press Enter to continue...")
+        self.get_logger().info("任务开始")
 
         while rclpy.ok():
             if self.command_type == COMMAND_TYPE.STOP:
-                print("任务终止")
-                rclpy.shutdown()
-                break
+                self.vla_state = VLA_STATE.STOP
 
-            # 检查是否有有效的状态和图像
-            with self.depth_lock, self.image_lock, self.state_lock:
-                # print(f"state_lock: {self.state_lock.locked()},image_lock:{self.image_lock.locked()}")
-                # if (self.current_state is None or
-                #     self.current_wrist_image is None or
-                #     not self.first_image_received):
-                #     print("等待中... 图像未准备好")
-                #     rate.sleep()
-                #     continue
-
-                if self.rgb_image is None:
-                    # print("等待中... RGB图像未准备好")
-                    time.sleep(0.01)
-                    # rate.sleep()
-                    continue
-                
-                if self.current_state is None:
-                    time.sleep(0.01)
-                    continue
-                
-                if self.depth_image is None:
-                    time.sleep(0.01)
-                    # rate.sleep
-                    continue
-
-            state = self.current_state.copy()
-
-            # if image is None or wrist_image is None:
-            #     print("等待中... wrist图像未准备好")
-            #     rate.sleep()
-            #     continue
-
-            distance = np.linalg.norm(state[0:2] - self.last_state[0:2], axis=0)
-            
-            # 检查是否满足推理条件：位置移动距离 OR 时间超时
-            current_time = self.get_clock().now()
-            should_infer = False
-            # print("开始推理")
-            # print(self.command_content[0])
-            # print(isinstance(self.command_content[0], (list, tuple, np.ndarray)))
-
-            # 条件1：位置移动距离小于阈值（原逻辑，表示已到达目标点附近）
-            if distance < 0.01 and self.command_type == COMMAND_TYPE.WAIT:
-                should_infer = True
-                inference_reason = f"位置移动距离小于阈值: {distance:.4f} < 0.01"
-                # print(f"first_command: {self.first_command}")
-                if self.first_command:
-                    self.first_command = False
-                    print(f"到达任务点{waypoint}，准备执行下一步任务")
-                    self.command_type = COMMAND_TYPE.WAIT
-                    self.command_content.pop(0)
+            match self.vla_state:
+                case VLA_STATE.INIT:
+                    if self.depth_info and self.get_frame_snapshot() is not None:
+                        print("初始化完成")
+                        self.vla_state = VLA_STATE.WAIT
+                    else:
+                        rate.sleep()
+                        continue
+                case VLA_STATE.WAIT:
                     if not self.command_content:
-                        print("所有任务完成，停止推理")
-                        rclpy.shutdown()
+                        self.vla_state = VLA_STATE.FINISH
+                        continue
+                    if self.command_type == COMMAND_TYPE.GO:
+                        self.vla_state = VLA_STATE.PLAN
+                    else:
+                        rate.sleep()
 
-            # 条件2：时间超时
-            elif self.last_inference_time is not None and self.command_type == COMMAND_TYPE.WAIT:
-                time_since_last_inference = (current_time - self.last_inference_time).nanoseconds / 1e9
-                if time_since_last_inference > self.inference_timeout:
-                    should_infer = True
-                    inference_reason = f"时间超时: {time_since_last_inference:.2f}s > {self.inference_timeout}s"
-                else:
-                    print(f"等待中... 距离: {distance:.4f}, 时间间隔: {time_since_last_inference:.2f}s")
+                case VLA_STATE.PLAN:
+                    try:
+                        frame = self.get_frame_snapshot()
+                        if frame is None or self.depth_info is None:
+                            self.get_logger().warn("传感器未准备好，重新初始化")
+                            self.vla_state = VLA_STATE.INIT
+                            continue
 
-            # 进行推理
-            else:
-                print("准备进行推理")
-                if isinstance(self.command_content[0], (list, tuple, np.ndarray)) and self.command_type == COMMAND_TYPE.GO:
-                    print("开始规划")
-                    self.first_command = True
-                    print(f"当前任务内容: {np.array(self.command_content[0])}")
-                    waypoint = np.array(self.command_content[0])[0:3]
-                    print(f"当前任务点: {waypoint}")
-                    print(f"Go to the point: {waypoint}")
+                        cmd = self.command_content[0]
 
-                    self.pub_goal = True
+                        if is_waypoint_cmd(cmd):
+                            waypoint = np.array(cmd, dtype=float).reshape(-1)[:3].tolist()
+                            self.get_logger().info(f"收到直接导航导航点：{waypoint}")
+                            self.vla_state = VLA_STATE.PUBLISH
+                        elif is_label_cmd(cmd):
+                            result = open_serve(frame.rgb_image, cmd)
+                            self.get_logger().info(f"推理结果：{result}")
+                            waypoint = self.pixel_to_world(result, frame)
+                            self.get_logger().info(f"收到标签指令：{cmd}，将前往{waypoint}")
+                            self.vla_state = VLA_STATE.PUBLISH
+                        else:
+                            self.get_logger().warn(f"收到未知指令：{cmd}，请检查指令格式")
+                            self.command_content.pop(0)
+                            self.vla_state = VLA_STATE.WAIT
 
-                else:
-                    # 第一次推理
-                    should_infer = True
-                    inference_reason = "首次推理"
-                    self.first_command = True
+                        self.last_plan_time = self.get_clock().now()
 
-            if should_infer and waypoint is None and self.command_type == COMMAND_TYPE.GO:
-                try:
-                    self.first_command = True
-                    print(f"开始推理 - {inference_reason}")
+                    except Exception as e:
+                        logging.error(f"规划失败: {e}")
+                        self.vla_state = VLA_STATE.ERROR
+                
+                case VLA_STATE.PUBLISH:
+                    try:
+                        if waypoint is None:
+                            self.get_logger().warn("没有有效的导航点，将重新规划")
+                            self.vla_state = VLA_STATE.PLAN
+                            continue
 
-                    # 保存输入到模型的图像
-                    timestamp = self.get_clock().now().to_msg()
+                        self.publish_action(waypoint)
+                        self.last_state = np.array([waypoint[0], waypoint[1], waypoint[2], 0,0,0], dtype=np.float64)
+                        self.first_command = True
+                        self.command_type = COMMAND_TYPE.WAIT
+                        self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
 
-                    # 调用openai进行处理
-                    result = open_serve(self.rgb_image, self.command_content[0])
-                    print(f"推理结果: {result}")
+                    except Exception as e:
+                        logging.error(f"发布: {e}")
+                        self.vla_state = VLA_STATE.ERROR
 
-                    # 更新推理时间记录
-                    self.last_inference_time = current_time
+                case VLA_STATE.WAIT_ACTION_FINISH:
+                    try:
+                        frame = self.get_frame_snapshot()
+                        if waypoint is None:
+                            self.vla_state = VLA_STATE.PLAN
+                            continue
+                        if frame is None:
+                            rate.sleep()
+                            continue
+                        current_state = np.array(frame.current_state[0:3], dtype=np.float64)
+                        last_state = np.array(self.last_state[0:3], dtype=np.float64)
 
-                    # 生成waypoint
-                    waypoint = self.pixel_to_world(result)
+                        distance = np.linalg.norm(current_state - last_state)
+                        time_elapsed = 0.0 if self.last_plan_time is None \
+                            else (self.get_clock().now() - self.last_plan_time).nanoseconds / 1e9
+                        
+                        print(f"距离目的地：{distance}m，运行时长：{time_elapsed:.2f}秒")
 
-                    print(f"Go to the {self.command_content[0]}: {waypoint}")
+                        if distance < self.arrival_distance:
+                            self.get_logger().info(f"到达目标点 {waypoint}，距离: {distance:.2f} m")
+                            self.first_command = False
+                            self.command_content.pop(0)
+                            waypoint = None
+                            self.vla_state = VLA_STATE.FINISH if not self.command_content else VLA_STATE.WAIT
+                            continue
 
-                    self.pub_goal = True
+                        # if time_elapsed > self.time_out:
+                        #     cmd = self.command_content[0] if self.command_content else None
+                        #     if is_label_cmd(cmd) or is_waypoint_cmd(cmd):
+                        #         self.get_logger().warn("超时，重新规划")
+                        #         self.vla_state = VLA_STATE.PLAN
 
-                    # waypoint = [1.4371602535247803, 4.463369369506836, 0.0]
+                        #     else:
+                        #         self.get_logger().warn(f"收到未知指令：{cmd}，请检查指令格式")
+                        #         self.command_content.pop(0)
+                        #         self.vla_state = VLA_STATE.WAIT
+                                
+                        rate.sleep()
 
-                except Exception as e:
-                    logging.error(f"推理错误: {e}")
+                    except Exception as e:
+                        logging.error(f"动作完成失败: {e}")
 
-            # 发布动作
-            if waypoint is not None and self.command_type == COMMAND_TYPE.GO and self.pub_goal:
-                self.publish_action(waypoint)
-                self.last_state = waypoint.copy()
-                self.command_type = COMMAND_TYPE.WAIT
-                self.pub_goal = False
+                case VLA_STATE.FINISH:
+                    self.get_logger().info("所有任务完成")
+                    rclpy.shutdown()
+
+                case VLA_STATE.STOP:
+                    self.get_logger().info("任务收到停止指令")
+                    rclpy.shutdown()
+                
+                case VLA_STATE.ERROR:
+                    self.get_logger().error("发生错误，等待正确指令")
+                    time.sleep(1)
+                    self.vla_state = VLA_STATE.WAIT
 
             rate.sleep()
-
 
 def main():
     logging.basicConfig(level=logging.INFO)

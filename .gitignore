@@ -18,6 +18,7 @@ simulation/ROS-Unity_bridge/devel
 ros2_py310
 simulation/utils
 ai2thor
+unity
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
