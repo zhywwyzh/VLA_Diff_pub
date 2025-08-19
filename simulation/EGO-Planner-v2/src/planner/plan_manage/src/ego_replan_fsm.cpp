@@ -62,8 +62,8 @@ namespace ego_planner
 
     if (target_type_ == TARGET_TYPE::MANUAL_TARGET)
     {
-      waypoint_sub_ = nh.subscribe("/uav_actions", 1, &EGOReplanFSM::uavActionCallback, this);
-      // waypoint_sub_ = nh.subscribe("/goal", 1, &EGOReplanFSM::waypointCallback, this);
+      // waypoint_sub_ = nh.subscribe("/uav_actions", 1, &EGOReplanFSM::uavActionCallback, this);
+      waypoint_sub_ = nh.subscribe("/goal", 1, &EGOReplanFSM::waypointCallback, this);
     }
     else if (target_type_ == TARGET_TYPE::PRESET_TARGET)
     {

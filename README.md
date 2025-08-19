@@ -124,3 +124,4 @@ uv run VLA_Diff/Openpi/scripts/serve_policy.py policy:checkpoint --policy.config
 cd VLA_Diff/Openpi/test/infer
 python test_simulation.py
 ```
+modelscope download --model OpenGVLab/InternVL3-8B-Instruct --local_dir ~/Modelscope/InternVL3-8B-Instruct
