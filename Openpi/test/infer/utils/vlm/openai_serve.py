@@ -16,7 +16,7 @@ os.environ.pop("all_proxy", None)
 # 初始化客户端
 client = OpenAI(api_key='EMPTY', base_url='http://127.0.0.1:6006/v1')
 
-def open_serve(img, input):
+def open_serve(img1, img2, input):
     """
     传入 OpenCV 读取的图像对象，返回模型识别出的红杯子像素坐标(JSON格式)。
     
@@ -28,9 +28,13 @@ def open_serve(img, input):
     """
     # input = "door"
     # 将图像编码为base64
-    _, buffer = cv2.imencode('.jpg', img)
-    img_base64 = base64.b64encode(buffer).decode('utf-8')
-    data_url = f'data:image/jpeg;base64,{img_base64}'
+    _, buffer1 = cv2.imencode('.jpg', img1)
+    img1_base64 = base64.b64encode(buffer1).decode('utf-8')
+    data_url1 = f'data:image/jpeg;base64,{img1_base64}'
+
+    _, buffer2 = cv2.imencode('.jpg', img2)
+    img2_base64 = base64.b64encode(buffer2).decode('utf-8')
+    data_url2 = f'data:image/jpeg;base64,{img2_base64}'
 
     # 获取模型名称
     model_name = client.models.list().data[0].id
@@ -39,13 +43,6 @@ def open_serve(img, input):
     response = client.chat.completions.create(
         model=model_name,
         messages=[
-            # {
-            #     'role':'system',
-            #     'content':[{
-            #         'type': 'text',
-            #         'text': SYSTEM_PROMPT
-            #     }]
-            # },
             {
                 'role':'user',
                 'content':[{
@@ -60,20 +57,20 @@ def open_serve(img, input):
                     'text': ASSISTANT1
                 }]
             },
-            {
-                'role':'user',
-                'content':[{
-                    'type': 'text',
-                    'text': USER2
-                }]
-            },
-            {
-                'role':'assistant',
-                'content':[{
-                    'type': 'text',
-                    'text': ASSISTANT2
-                }]
-            },
+            # {
+            #     'role':'user',
+            #     'content':[{
+            #         'type': 'text',
+            #         'text': USER2
+            #     }]
+            # },
+            # {
+            #     'role':'assistant',
+            #     'content':[{
+            #         'type': 'text',
+            #         'text': ASSISTANT2
+            #     }]
+            # },
             {
                 'role': 'user',
                 'content': [{
@@ -82,7 +79,7 @@ def open_serve(img, input):
                 }, {
                     'type': 'image_url',
                     'image_url': {
-                        'url': data_url,
+                        'url': data_url1,
                     },
                 }],
         }],

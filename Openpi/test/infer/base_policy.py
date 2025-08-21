@@ -11,6 +11,7 @@ import threading
 import cv2
 from rclpy.time import Time
 from geometry_msgs.msg import PoseStamped
+import pdb
 
 @dataclass
 class Frame:
@@ -98,7 +99,8 @@ class BasePolicyNode(Node):
  
             # 假设深度编码：8bit 0..255 -> 0..5 m
             depth_m = depth[:, :, 0]
-            depth_32 = depth_m.astype(np.float32) / 255.0 * 5.0
+            # print("depth_m 最大值:", np.max(depth_m))
+            depth_32 = depth_m.astype(np.float32) / 255.0 * 10.0
             depth_32[depth_32 == 0] = 5.1
             depth_image = depth_32.copy()
 
@@ -122,7 +124,8 @@ class BasePolicyNode(Node):
             self.depth_info = {
                 'height': msg.height, 'width': msg.width,
                 'fx': msg.k[0], 'fy': msg.k[4],
-                'cx': msg.k[2], 'cy': msg.k[5]
+                'cx': msg.k[2], 'cy': msg.k[5],
+                'fov': 57.0
             }
             self.destroy_subscription(self.depth_info_sub)
 
@@ -198,6 +201,67 @@ class BasePolicyNode(Node):
         center_x = (x1 + x2) / 2
         center_y = (y1 + y2) / 2
         return center_x, center_y
+    
+    def _to_rad(self, ang):
+        """度/弧度自适应：若|ang|>pi视为度并转弧度"""
+        if isinstance(ang, (list, tuple, np.ndarray)):
+            return [self._to_rad(a) for a in ang]
+        return np.deg2rad(ang) if abs(float(ang)) > np.pi else float(ang)
+
+    def _fov_hv_from_info(self, fov_info, W, H):
+        """
+        接受：
+        - 标量：默认为水平FOV
+        - 字典：{'h':.., 'v':..} 或 仅 'h' 或 仅 'v' 或 {'diag':..}
+        返回：fh, fv（均为弧度）
+        """
+        r = W / float(H)
+        if isinstance(fov_info, dict):
+            if 'h' in fov_info and 'v' in fov_info:
+                fh, fv = self._to_rad(fov_info['h']), self._to_rad(fov_info['v'])
+            elif 'h' in fov_info:
+                fh = self._to_rad(fov_info['h'])
+                fv = 2.0 * np.arctan(np.tan(fh/2.0) * (1.0/r))
+            elif 'v' in fov_info:
+                fv = self._to_rad(fov_info['v'])
+                fh = 2.0 * np.arctan(np.tan(fv/2.0) * r)
+            elif 'diag' in fov_info:
+                fd = self._to_rad(fov_info['diag'])
+                a = np.tan(fd/2.0)
+                t = a / np.sqrt(r*r + 1.0)   # tan(fv/2)
+                fv = 2.0 * np.arctan(t)
+                fh = 2.0 * np.arctan(r * t)
+            else:
+                raise ValueError("fov dict 需含 'h'/'v'/'diag' 之一")
+        else:
+            # 标量视为水平FOV
+            fh = self._to_rad(fov_info)
+            fv = 2.0 * np.arctan(np.tan(fh/2.0) * (1.0/r))
+        return fh, fv
+
+    def _backproject_from_fov(self, u, v, depth_value, W, H, fov_info, mode="z"):
+        """
+        用FOV回投到相机光学系(OpenCV: x右、y下、z前)
+        - mode='z'：depth_value 为Z深度
+        - mode='range'：depth_value 为射线欧氏长度
+        """
+        fh, fv = self._fov_hv_from_info(fov_info, W, H)
+        cx = (W - 1) * 0.5
+        cy = (H - 1) * 0.5
+        nx = (u - cx) / max(cx, 1e-9)  # [-1,1]
+        ny = (v - cy) / max(cy, 1e-9)
+
+        thx = nx * (fh * 0.5)
+        thy = ny * (fv * 0.5)
+
+        d = np.array([np.tan(thx), np.tan(thy), 1.0], dtype=np.float64)  # 光学系方向
+        if mode == "z":
+            return d * float(depth_value)                    # 保证 z == depth_value
+        elif mode == "range":
+            s = d / np.linalg.norm(d)
+            return s * float(depth_value)                    # 保证 ||P|| == depth_value
+        else:
+            raise ValueError(f"Unknown depth mode: {mode}")
 
     def pixel_to_world(self, results, frame: Frame,
                     depth_scale=1.0, window=0, depth_mode="z"):
@@ -219,6 +283,7 @@ class BasePolicyNode(Node):
 
         H, W = frame.depth_image.shape[:2]
         ui, vi = int(round(u)), int(round(v))
+        # pdb.set_trace()
         if not (0 <= ui < W and 0 <= vi < H):
             raise ValueError(f"(u,v)=({ui},{vi}) 超出图像范围 {W}x{H}")
 
@@ -231,16 +296,21 @@ class BasePolicyNode(Node):
         else:
             depth_raw = float(frame.depth_image[vi, ui])
 
-        if depth_raw == 5.1:       # 你的特殊哨兵值逻辑
+        if depth_raw > 5.0 + 1e-6:       # 你的特殊哨兵值逻辑
             replan = True
             depth_raw = 5.0
-
+        # print(f"depth_raw: {depth_raw}")
         depth_val = depth_raw * depth_scale
         if not np.isfinite(depth_val) or depth_val <= 0:
             raise ValueError(f"无效深度 depth={depth_val}")
+        
+        print(f"深度为:{depth_val}")
 
         # ---------- 2) 像素→相机光学系（OpenCV: x右、y下、z前） ----------
-        P_opt = self._backproject(u, v, depth_val, fx, fy, cx, cy, depth_mode)
+        # P_opt = self._backproject(u, v, depth_val, fx, fy, cx, cy, depth_mode)
+        H, W = frame.depth_image.shape[:2]
+        fov_info = self.depth_info['fov']    # 可为标量或dict，见上方说明
+        P_opt = self._backproject_from_fov(u, v, depth_val, W, H, fov_info, depth_mode)
 
         # ---------- 3) 光学系→相机机体系（x前、y左、z上） ----------
         # 与此前一致：R_opt2cam 把 (右,下,前) 映射为 (前,左,上)
@@ -260,6 +330,7 @@ class BasePolicyNode(Node):
         # ---------- 5) 安全距离处理：沿视线方向后退 self.safe_dis ----------
         # 在相机机体系中缩放到 (||P_cam|| - safe_dis)
         dist_cam = float(np.linalg.norm(P_cam))
+
         if dist_cam <= self.safe_dis + 1e-6:
             # 目标距离过近：保持在相机当前位置（或你可按需改为在相机前方极小偏移）
             P_cam_safe = np.zeros(3, dtype=np.float64)

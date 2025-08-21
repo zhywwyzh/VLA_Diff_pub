@@ -4,6 +4,7 @@ class COMMAND_TYPE:
     GO = 2
     NEXT = 3
     GO_ORIGIN = 4
+    AGAIN = 5
 
 class VLA_STATE:
     INIT = 0

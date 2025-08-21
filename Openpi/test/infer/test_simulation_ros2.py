@@ -59,10 +59,16 @@ class UAVPolicyNode(BasePolicyNode):
         self.inference_timeout = 5.0  # 设置推理超时时间（秒），可以根据需要调整
         self.save = None
         self.plan = True
-        self.command_content = ["请前往左侧第一个饮水机右侧，给我图中的二维坐标，只给坐标，其他的什么都不要输出",
-                                "找到右侧第一个门的位置，给我图中的二维坐标，只给坐标，其他的什么都不要输出",
-                                '找到树的位置，给我图中的二维坐标，只给坐标，其他的什么都不要输出', 
-                                "前进"]
+        self.last_command = None
+        self.first_mission_obs = None
+        self.first_plan = False
+        self.command_content = [
+                                "请前往两个饮水机正中间，给我图中的二维坐标，只给坐标，其他的什么都不要输出",
+                                "找到右侧第一个门，给我图中的二维坐标，只给坐标，其他的什么都不要输出",
+                                "前往右侧门的右后方,给我图中的二维坐标，只给坐标，其他的什么都不要输出",
+                                '找到树的位置，给我图中的二维坐标，只给坐标，其他的什么都不要输出',
+                                "前进"
+                                ]
         self.replan = False
         self.task_id = [1, 2, 2, 1]
         # self.command_content = ["fridge", (-16.146, 3.6, 0.877, 0, 0, 0), "fridge"]
@@ -171,7 +177,11 @@ class UAVPolicyNode(BasePolicyNode):
         self.command_type = msg.data
         print(f"当前指令类型: {self.command_type}")
         if self.command_type == COMMAND_TYPE.NEXT:
-            self.command_content.pop(0)
+            # self.command_content.pop(0)
+            self.vla_state = VLA_STATE.PLAN
+
+        if self.command_type == COMMAND_TYPE.AGAIN:
+            self.command_content.insert(0, self.last_command)
             self.vla_state = VLA_STATE.PLAN
 
         if self.command_type == COMMAND_TYPE.GO_ORIGIN:
@@ -295,7 +305,7 @@ class UAVPolicyNode(BasePolicyNode):
 
                         else:
                             self.get_logger().warn(f"收到未知指令：{cmd}，请检查指令格式")
-                            self.command_content.pop(0)
+                            # self.command_content.pop(0)
                             self.vla_state = VLA_STATE.WAIT
 
                         self.last_plan_time = self.get_clock().now()
@@ -319,7 +329,11 @@ class UAVPolicyNode(BasePolicyNode):
 
                         if self.replan:
                             time.sleep(1)  # 等待动作发布完成
+                            self.command_content.insert(0, self.last_command)
                             self.vla_state = VLA_STATE.PLAN
+
+                        else:
+                            self.last_command = self.command_content.pop(0)
 
                     except Exception as e:
                         logging.error(f"发布: {e}")
@@ -341,12 +355,11 @@ class UAVPolicyNode(BasePolicyNode):
                         time_elapsed = 0.0 if self.last_plan_time is None \
                             else (self.get_clock().now() - self.last_plan_time).nanoseconds / 1e9
                         
-                        print(f"距离目的地：{distance}m，运行时长：{time_elapsed:.2f}秒")
+                        # print(f"距离目的地：{distance}m，运行时长：{time_elapsed:.2f}秒")
 
                         if distance < self.arrival_distance:
                             self.get_logger().info(f"到达目标点 {waypoint}，距离: {distance:.2f} m")
                             self.first_command = False
-                            self.command_content.pop(0)
                             waypoint = None
                             self.vla_state = VLA_STATE.FINISH if not self.command_content else VLA_STATE.WAIT
                             continue
