@@ -59,7 +59,12 @@ class UAVPolicyNode(BasePolicyNode):
         self.inference_timeout = 5.0  # 设置推理超时时间（秒），可以根据需要调整
         self.save = None
         self.plan = True
-        self.command_content = ["door", (0, 0, 1.2, 0, 0, 0), "fridge"]
+        self.command_content = ["请前往左侧第一个饮水机右侧，给我图中的二维坐标，只给坐标，其他的什么都不要输出",
+                                "找到右侧第一个门的位置，给我图中的二维坐标，只给坐标，其他的什么都不要输出",
+                                '找到树的位置，给我图中的二维坐标，只给坐标，其他的什么都不要输出', 
+                                "前进"]
+        self.replan = False
+        self.task_id = [1, 2, 2, 1]
         # self.command_content = ["fridge", (-16.146, 3.6, 0.877, 0, 0, 0), "fridge"]
         self.first_command = False
         self.command_type = COMMAND_TYPE.WAIT
@@ -84,10 +89,10 @@ class UAVPolicyNode(BasePolicyNode):
                                                self.command_type_callback,
                                                10)
         
-        # self.command_content_sub = self.create_subscription(String,
-        #                                         "command/content",
-        #                                         self.command_content_callback,
-        #                                         10)
+        self.command_content_sub = self.create_subscription(String,
+                                                "command/content",
+                                                self.command_content_callback,
+                                                10)
 
         # 发布无人机动作
         self.action_pub = self.create_publisher(PoseStamped,
@@ -165,6 +170,12 @@ class UAVPolicyNode(BasePolicyNode):
         """处理指令需求回调"""
         self.command_type = msg.data
         print(f"当前指令类型: {self.command_type}")
+        if self.command_type == COMMAND_TYPE.NEXT:
+            self.command_content.pop(0)
+            self.vla_state = VLA_STATE.PLAN
+
+        if self.command_type == COMMAND_TYPE.GO_ORIGIN:
+            self.vla_state = VLA_STATE.GO_ORIGIN
 
     def command_content_callback(self, msg):
         """处理指令内容回调"""
@@ -198,10 +209,16 @@ class UAVPolicyNode(BasePolicyNode):
 
         # 将欧拉角转换为四元数
         # qx, qy, qz, qw = self.euler_to_quaternion(action[3], action[4], action[5])
-        pose_msg.pose.orientation.x = 0.0
-        pose_msg.pose.orientation.y = 0.0
-        pose_msg.pose.orientation.z = 0.0
-        pose_msg.pose.orientation.w = 1.0
+        if len(action) == 3:
+            pose_msg.pose.orientation.x = 0.0
+            pose_msg.pose.orientation.y = 0.0
+            pose_msg.pose.orientation.z = 0.0
+            pose_msg.pose.orientation.w = 1.0
+        else:
+            pose_msg.pose.orientation.x = float(action[3])
+            pose_msg.pose.orientation.y = float(action[4])
+            pose_msg.pose.orientation.z = float(action[5])
+            pose_msg.pose.orientation.w = float(action[6])
         self.action_pub.publish(pose_msg)
 
     def run_inference(self):
@@ -230,9 +247,10 @@ class UAVPolicyNode(BasePolicyNode):
         while rclpy.ok():
             if self.command_type == COMMAND_TYPE.STOP:
                 self.vla_state = VLA_STATE.STOP
-
+            # pdb.set_trace()
             match self.vla_state:
                 case VLA_STATE.INIT:
+                    frame = self.get_frame_snapshot()
                     if self.depth_info and self.get_frame_snapshot() is not None:
                         print("初始化完成")
                         self.vla_state = VLA_STATE.WAIT
@@ -262,12 +280,19 @@ class UAVPolicyNode(BasePolicyNode):
                             waypoint = np.array(cmd, dtype=float).reshape(-1)[:3].tolist()
                             self.get_logger().info(f"收到直接导航导航点：{waypoint}")
                             self.vla_state = VLA_STATE.PUBLISH
+
                         elif is_label_cmd(cmd):
                             result = open_serve(frame.rgb_image, cmd)
                             self.get_logger().info(f"推理结果：{result}")
-                            waypoint = self.pixel_to_world(result, frame)
+                            # --- 关键修改：字符串转成 list[int] ---
+                            if isinstance(result, str):
+                                # 去掉括号和空格，按逗号分割
+                                result = result.strip("()\" ")
+                                result = [int(x) for x in result.split(",")]
+                            waypoint, self.replan = self.pixel_to_world(result, frame)
                             self.get_logger().info(f"收到标签指令：{cmd}，将前往{waypoint}")
                             self.vla_state = VLA_STATE.PUBLISH
+
                         else:
                             self.get_logger().warn(f"收到未知指令：{cmd}，请检查指令格式")
                             self.command_content.pop(0)
@@ -292,6 +317,10 @@ class UAVPolicyNode(BasePolicyNode):
                         self.command_type = COMMAND_TYPE.WAIT
                         self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
 
+                        if self.replan:
+                            time.sleep(1)  # 等待动作发布完成
+                            self.vla_state = VLA_STATE.PLAN
+
                     except Exception as e:
                         logging.error(f"发布: {e}")
                         self.vla_state = VLA_STATE.ERROR
@@ -308,7 +337,7 @@ class UAVPolicyNode(BasePolicyNode):
                         current_state = np.array(frame.current_state[0:3], dtype=np.float64)
                         last_state = np.array(self.last_state[0:3], dtype=np.float64)
 
-                        distance = np.linalg.norm(current_state - last_state)
+                        distance = np.linalg.norm(current_state - last_state) - 0.4
                         time_elapsed = 0.0 if self.last_plan_time is None \
                             else (self.get_clock().now() - self.last_plan_time).nanoseconds / 1e9
                         
@@ -349,6 +378,17 @@ class UAVPolicyNode(BasePolicyNode):
                 case VLA_STATE.ERROR:
                     self.get_logger().error("发生错误，等待正确指令")
                     time.sleep(1)
+                    self.vla_state = VLA_STATE.WAIT
+
+                case VLA_STATE.GO_ORIGIN:
+                    self.get_logger().info("收到 GO_ORIGIN 指令")
+                    waypoint1 = [13.75556939149453, 1.1951389392754197, 1.6000002883663185,
+                                 9.283559481815831e-09, -8.782741600475798e-10, 0.40138711153766954, 0.9159085034496877]
+                    self.publish_action(waypoint1)
+                    time.sleep(3)
+                    waypoint2 = [13.136453639674091, 0.5770826187959396, 1.5999999937387603,
+                                 6.791822847841003e-06, 2.862005646358964e-06, -0.9238737612250798, 0.3826973651143999]
+                    self.publish_action(waypoint2)
                     self.vla_state = VLA_STATE.WAIT
 
             rate.sleep()

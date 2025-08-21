@@ -2,6 +2,8 @@ class COMMAND_TYPE:
     WAIT = 0
     STOP = 1
     GO = 2
+    NEXT = 3
+    GO_ORIGIN = 4
 
 class VLA_STATE:
     INIT = 0
@@ -12,4 +14,5 @@ class VLA_STATE:
     FINISH = 5
     STOP = 6
     ERROR = 7
+    GO_ORIGIN = 8
 

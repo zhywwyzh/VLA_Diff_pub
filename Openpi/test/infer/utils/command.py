@@ -43,14 +43,14 @@ class CommandPublisher(Node):
         while rclpy.ok():
             # ===== 输入 command/type =====
             cmd_type = None
-            while cmd_type not in [0, 1, 2]:
+            while cmd_type not in [0, 1, 2, 3, 4]:
                 try:
-                    cmd_type = int(input("请输入 command/type (0,1,2): "))
+                    cmd_type = int(input("请输入 command/type (0,1,2,3,4): "))
                 except ValueError:
-                    print("❌ 输入必须是整数 (0,1,2)")
+                    print("❌ 输入必须是整数 (0,1,2,3,4)")
                     continue
-                if cmd_type not in [0, 1, 2]:
-                    print("❌ 输入错误，请输入 0, 1 或 2")
+                if cmd_type not in [0, 1, 2, 3, 4]:
+                    print("❌ 输入错误，请输入 0, 1, 2, 3 或 4")
 
             # 发布 type
             type_msg = Int32()

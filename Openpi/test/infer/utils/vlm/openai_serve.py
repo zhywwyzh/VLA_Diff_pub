@@ -4,10 +4,17 @@ import base64
 import re
 import json
 from utils.vlm.prompt import SYSTEM_PROMPT, USER1, ASSISTANT1, USER2, ASSISTANT2
+import os
 
+os.environ.pop("HTTP_PROXY", None)
+os.environ.pop("HTTPS_PROXY", None)
+os.environ.pop("ALL_PROXY", None)
+os.environ.pop("http_proxy", None)
+os.environ.pop("https_proxy", None)
+os.environ.pop("all_proxy", None)
 
 # 初始化客户端
-client = OpenAI(api_key='EMPTY', base_url='http://0.0.0.0:6006/v1')
+client = OpenAI(api_key='EMPTY', base_url='http://127.0.0.1:6006/v1')
 
 def open_serve(img, input):
     """
@@ -32,13 +39,13 @@ def open_serve(img, input):
     response = client.chat.completions.create(
         model=model_name,
         messages=[
-            {
-                'role':'system',
-                'content':[{
-                    'type': 'text',
-                    'text': SYSTEM_PROMPT
-                }]
-            },
+            # {
+            #     'role':'system',
+            #     'content':[{
+            #         'type': 'text',
+            #         'text': SYSTEM_PROMPT
+            #     }]
+            # },
             {
                 'role':'user',
                 'content':[{
@@ -86,15 +93,17 @@ def open_serve(img, input):
     # 返回内容部分
     # 获取字符串内容
     content = response.choices[0].message.content
+    print(f"模型返回内容: {content}")
 
     # 去掉 ```json ... ``` 包裹
-    json_str = re.sub(r"^```json\s*|\s*```$", "", content.strip(), flags=re.DOTALL)
+    # json_str = re.sub(r"^```json\s*|\s*```$", "", content.strip(), flags=re.DOTALL)
 
     # 转成 Python 对象
     try:
-        return json.loads(json_str)
+        # return json.loads(json_str)
+        return content
     except json.JSONDecodeError:
-        raise ValueError(f"模型返回的JSON解析失败: {json_str}")
+        raise ValueError(f"模型返回的JSON解析失败: {content}")
 
 # 使用示例
 if __name__ == "__main__":

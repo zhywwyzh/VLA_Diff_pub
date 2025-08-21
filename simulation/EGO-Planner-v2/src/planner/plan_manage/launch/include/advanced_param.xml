@@ -45,7 +45,7 @@
         <remap from="~planning/heartbeat" to = "/drone_$(arg drone_id)_traj_server/heartbeat"/>
         <remap from="/goal" to = "/goal_with_id"/>
         <remap from="~grid_map/odom" to="/drone_$(arg drone_id)_$(arg odometry_topic)"/>
-        <remap from="~grid_map/cloud" to="/drone_$(arg drone_id)_$(arg cloud_topic)"/>
+        <remap from="~grid_map/cloud" to="/livox/lidar_filtered"/>
         <remap from="~grid_map/pose"   to = "/drone_$(arg drone_id)_$(arg camera_pose_topic)"/>
         <remap from="~grid_map/depth" to = "/drone_$(arg drone_id)_$(arg depth_topic)"/>
         <!-- planning fsm -->
@@ -79,7 +79,7 @@
         <param name="grid_map/local_update_range_x" value="5.5" />
         <param name="grid_map/local_update_range_y" value="5.5" />
         <param name="grid_map/local_update_range_z" value="2.0" /> <!-- different meaning between grid_map.cpp and grid_map_bigmap.cpp -->
-        <param name="grid_map/obstacles_inflation" value="0.1" />
+        <param name="grid_map/obstacles_inflation" value="0.4" />
         <param name="grid_map/local_map_margin" value="10"/>
         <param name="grid_map/enable_virtual_wall" value="true"/>
         <param name="grid_map/virtual_ceil" value="3.0"/>
