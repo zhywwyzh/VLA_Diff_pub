@@ -60,15 +60,27 @@ class UAVPolicyNode(BasePolicyNode):
         self.save = None
         self.plan = True
         self.last_command = None
-        self.first_mission_obs = None
+        self.first_mission_frame = None
         self.first_plan = False
         self.command_content = [
-                                "请前往两个饮水机正中间，给我图中的二维坐标，只给坐标，其他的什么都不要输出",
-                                "找到右侧第一个门，给我图中的二维坐标，只给坐标，其他的什么都不要输出",
-                                "前往右侧门的右后方,给我图中的二维坐标，只给坐标，其他的什么都不要输出",
-                                '找到树的位置，给我图中的二维坐标，只给坐标，其他的什么都不要输出',
+                                "请结合传入的图1初始观测结果和图2当前观测结果，前往左侧通道入口，给我它在图2中的二维坐标，只给坐标，其他的什么都不要输出。此外，请根据图1的初始观察结果，\
+                                    告诉我当我位于图2的观测位置时，是否到达了图1的预期目标空间位置。只返回True or False,其他什么都不要返回",
+
+                                "请结合传入的图1初始观测结果和图2当前观测结果，找到右侧第一个门，给我它在图2中的二维坐标，只给坐标，其他的什么都不要输出。此外，请根据图1的初始观察结果，\
+                                    告诉我当我位于图2的观测位置时，是否到达了图1的预期目标空间位置。只返回True or False,其他什么都不要返回",
+
+                                "请结合传入的图1初始观测结果和图2当前观测结果，前往右侧门的右后方,给我它在图2中的二维坐标，只给坐标，其他的什么都不要输出。此外，请根据图1的初始观察结果，\
+                                    告诉我当我位于图2的观测位置时，是否到达了图1的预期目标空间位置。只返回True or False,其他什么都不要返回",
+
+                                '请结合传入的图1初始观测结果和图2当前观测结果，找到树的位置，给我它在图2中的二维坐标，只给坐标，其他的什么都不要输出。此外，请根据图1的初始观察结果，\
+                                    告诉我当我位于图2的观测位置时，是否到达了图1的预期目标空间位置。只返回True or False,其他什么都不要返回',
+
                                 "前进"
                                 ]
+        # self.command_content = ["请结合传入的图1初始观测结果和图2当前观测结果，请分析两张图片中各自有什么内容",
+        #                         "请结合传入的图1初始观测结果和图2当前观测结果，请分析两张图片中各自有什么内容",
+        #                         "请结合传入的图1初始观测结果和图2当前观测结果，请分析两张图片中各自有什么内容",
+        #                        ]
         self.replan = False
         self.task_id = [1, 2, 2, 1]
         # self.command_content = ["fridge", (-16.146, 3.6, 0.877, 0, 0, 0), "fridge"]
@@ -80,6 +92,7 @@ class UAVPolicyNode(BasePolicyNode):
         self.arrival_distance = 0.1
         self.time_out = 10.0
         self.vla_state = None
+        self.frame = None
 
         # 创建图像保存目录
         self.image_save_dir = '/home/zhywwyzh/workspace/VLA_Diff/Openpi/test/infer/trail/saved_images'
@@ -120,64 +133,12 @@ class UAVPolicyNode(BasePolicyNode):
         self.host = self.get_parameter('host').get_parameter_value().string_value
         self.port = self.get_parameter('port').get_parameter_value().integer_value
         self.replan_steps = self.get_parameter('replan_steps').get_parameter_value().integer_value
-        # self.prompt = self.get_parameter('prompt').get_parameter_value().string_value
-
-        # self.prompt = self.get_prompt_from_task_index()
-        # if self.prompt is None:
-        #     self.prompt = "无人机实时轨迹控制"
-        #     self.get_logger().warn("使用默认提示")
-        # print(f"使用提示: {self.prompt}")
-
-        # 连接WebSocket服务器
-        # print("尝试连接服务器")
-        # self.connect_websocket()
-        # print("已连接至服务器")
-
-    def get_prompt_from_task_index(self):
-        """
-        从 tasks.jsonl 文件中根据 task_index 查找并返回对
-        self.task_index = 2应的 prompt。
-        """
-        try:
-            if not os.path.exists(self.tasks_jsonl_path):
-                logging.error(f"tasks.jsonl 文件不存在: {self.tasks_jsonl_path}")
-                return None
-
-                
-            with open(self.tasks_jsonl_path, 'r') as f:
-                for line in f:
-                    data = json.loads(line)
-                    if data.get('task_index') == self.task_index:
-                        return data.get('task')
-        except FileNotFoundError:
-            logging.error(f"tasks.jsonl 文件未找到: {self.tasks_jsonl_path}")
-            return None
-        except json.JSONDecodeError as e:
-            logging.error(f"解析 tasks.jsonl 文件时出错: {self.tasks_jsonl_path}, 错误: {e}")
-            return None
-        except Exception as e:
-            logging.error(f"读取 tasks.jsonl 文件时出错: {e}")
-            return None
-        
-        logging.warning(f"在 {self.tasks_jsonl_path} 中未找到 task_index {self.task_index} 对应的任务。")
-        return None
-
-    def connect_websocket(self):
-        """连接WebSocket服务器"""
-        try:
-            logging.info(f"正在连接到服务器 ws://{self.host}:{self.port}")
-            self.client = _websocket_client_policy.WebsocketClientPolicy(self.host, self.port)
-        except Exception as e:
-            logging.error(f"连接WebSocket服务器失败: {e}")
-            self.get_logger().error("WebSocket连接失败，节点即将关闭")
-            rclpy.shutdown()
 
     def command_type_callback(self, msg):
         """处理指令需求回调"""
         self.command_type = msg.data
         print(f"当前指令类型: {self.command_type}")
         if self.command_type == COMMAND_TYPE.NEXT:
-            # self.command_content.pop(0)
             self.vla_state = VLA_STATE.PLAN
 
         if self.command_type == COMMAND_TYPE.AGAIN:
@@ -190,17 +151,6 @@ class UAVPolicyNode(BasePolicyNode):
     def command_content_callback(self, msg):
         """处理指令内容回调"""
         self.command_content.append(json.loads(msg.data))
-
-    def prepare_image_for_inference(self, image):
-        """准备推理用的图像，确保尺寸为256x256"""
-        if image is None:
-            return None
-        
-        # 确保图像是256x256
-        if image.shape[:2] != (256, 256):
-            image = cv2.resize(image, (256, 256))
-        
-        return image
     
     def publish_action(self, action):
         """发布动作到ROS话题"""
@@ -260,7 +210,6 @@ class UAVPolicyNode(BasePolicyNode):
             # pdb.set_trace()
             match self.vla_state:
                 case VLA_STATE.INIT:
-                    frame = self.get_frame_snapshot()
                     if self.depth_info and self.get_frame_snapshot() is not None:
                         print("初始化完成")
                         self.vla_state = VLA_STATE.WAIT
@@ -278,8 +227,8 @@ class UAVPolicyNode(BasePolicyNode):
 
                 case VLA_STATE.PLAN:
                     try:
-                        frame = self.get_frame_snapshot()
-                        if frame is None or self.depth_info is None:
+                        self.frame = self.get_frame_snapshot()
+                        if self.frame is None or self.depth_info is None:
                             self.get_logger().warn("传感器未准备好，重新初始化")
                             self.vla_state = VLA_STATE.INIT
                             continue
@@ -292,14 +241,19 @@ class UAVPolicyNode(BasePolicyNode):
                             self.vla_state = VLA_STATE.PUBLISH
 
                         elif is_label_cmd(cmd):
-                            result = open_serve(frame.rgb_image, cmd)
-                            self.get_logger().info(f"推理结果：{result}")
-                            # --- 关键修改：字符串转成 list[int] ---
-                            if isinstance(result, str):
-                                # 去掉括号和空格，按逗号分割
-                                result = result.strip("()\" ")
-                                result = [int(x) for x in result.split(",")]
-                            waypoint, self.replan = self.pixel_to_world(result, frame)
+                            if not self.first_plan:
+                                self.first_plan = True
+                                self.first_mission_frame = self.frame.rgb_image.copy()
+
+                            result, self.finish_mission = open_serve(self.first_mission_frame, self.frame.rgb_image, cmd)
+                            self.get_logger().info(f"推理结果：{result}，是否达到目的地：{self.finish_mission}")
+
+                            if self.finish_mission:
+                                self.vla_state = VLA_STATE.WAIT
+                                self.command_content.pop(0)
+                                continue
+
+                            waypoint, self.replan = self.pixel_to_world(result, self.frame)
                             self.get_logger().info(f"收到标签指令：{cmd}，将前往{waypoint}")
                             self.vla_state = VLA_STATE.PUBLISH
 
@@ -322,63 +276,15 @@ class UAVPolicyNode(BasePolicyNode):
                             continue
 
                         self.publish_action(waypoint)
+                        self.vla_state = VLA_STATE.PLAN
+                        print(f"发布导航点: {waypoint}")
                         self.last_state = np.array([waypoint[0], waypoint[1], waypoint[2], 0,0,0], dtype=np.float64)
                         self.first_command = True
-                        self.command_type = COMMAND_TYPE.WAIT
-                        self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
-
-                        if self.replan:
-                            time.sleep(1)  # 等待动作发布完成
-                            self.command_content.insert(0, self.last_command)
-                            self.vla_state = VLA_STATE.PLAN
-
-                        else:
-                            self.last_command = self.command_content.pop(0)
+                        time.sleep(0.5)  # 等待动作发布完成
 
                     except Exception as e:
                         logging.error(f"发布: {e}")
                         self.vla_state = VLA_STATE.ERROR
-
-                case VLA_STATE.WAIT_ACTION_FINISH:
-                    try:
-                        frame = self.get_frame_snapshot()
-                        if waypoint is None:
-                            self.vla_state = VLA_STATE.PLAN
-                            continue
-                        if frame is None:
-                            rate.sleep()
-                            continue
-                        current_state = np.array(frame.current_state[0:3], dtype=np.float64)
-                        last_state = np.array(self.last_state[0:3], dtype=np.float64)
-
-                        distance = np.linalg.norm(current_state - last_state) - 0.4
-                        time_elapsed = 0.0 if self.last_plan_time is None \
-                            else (self.get_clock().now() - self.last_plan_time).nanoseconds / 1e9
-                        
-                        # print(f"距离目的地：{distance}m，运行时长：{time_elapsed:.2f}秒")
-
-                        if distance < self.arrival_distance:
-                            self.get_logger().info(f"到达目标点 {waypoint}，距离: {distance:.2f} m")
-                            self.first_command = False
-                            waypoint = None
-                            self.vla_state = VLA_STATE.FINISH if not self.command_content else VLA_STATE.WAIT
-                            continue
-
-                        # if time_elapsed > self.time_out:
-                        #     cmd = self.command_content[0] if self.command_content else None
-                        #     if is_label_cmd(cmd) or is_waypoint_cmd(cmd):
-                        #         self.get_logger().warn("超时，重新规划")
-                        #         self.vla_state = VLA_STATE.PLAN
-
-                        #     else:
-                        #         self.get_logger().warn(f"收到未知指令：{cmd}，请检查指令格式")
-                        #         self.command_content.pop(0)
-                        #         self.vla_state = VLA_STATE.WAIT
-                                
-                        rate.sleep()
-
-                    except Exception as e:
-                        logging.error(f"动作完成失败: {e}")
 
                 case VLA_STATE.FINISH:
                     self.get_logger().info("所有任务完成")
