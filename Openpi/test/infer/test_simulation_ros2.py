@@ -93,6 +93,7 @@ class UAVPolicyNode(BasePolicyNode):
         self.time_out = 10.0
         self.vla_state = None
         self.frame = None
+        self.ego_trigger = False
 
         # 创建图像保存目录
         self.image_save_dir = '/home/zhywwyzh/workspace/VLA_Diff/Openpi/test/infer/trail/saved_images'
@@ -227,6 +228,11 @@ class UAVPolicyNode(BasePolicyNode):
 
                 case VLA_STATE.PLAN:
                     try:
+                        if self.ego_trigger:
+                            self.get_logger().info("到达目的地")
+                            self.vla_state = VLA_STATE.WAIT
+                            continue
+
                         self.frame = self.get_frame_snapshot()
                         if self.frame is None or self.depth_info is None:
                             self.get_logger().warn("传感器未准备好，重新初始化")
