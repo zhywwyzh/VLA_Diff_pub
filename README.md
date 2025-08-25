@@ -124,4 +124,21 @@ uv run VLA_Diff/Openpi/scripts/serve_policy.py policy:checkpoint --policy.config
 cd VLA_Diff/Openpi/test/infer
 python test_simulation.py
 ```
-modelscope download --model OpenGVLab/InternVL3-8B-Instruct --local_dir ~/Modelscope/InternVL3-8B-Instruct
+
+### 6. Run goal-utils and cloud_filter
+```bash
+cd VLA/simulation/EGO-Planner-v3
+catkin_make
+source devel/setup.bash
+roslaunch cloud_filter filter.launch
+```
+
+### 7. Run EGO-Planner-v3
+
+```bash
+cd VLA/simulation/EGO-Planner-v3
+catkin_make
+source devel/setup.bash
+roslaunch mission_fsm multidrone_sim.launch
+roslaunch mission_fsm rviz.launch
+```
