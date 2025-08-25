@@ -154,7 +154,7 @@ foreach(library ${libraries})
     set(lib_path "")
     set(lib "${library}-NOTFOUND")
     # since the path where the library is found is returned we have to iterate over the paths manually
-    foreach(path /home/zhywwyzh/workspace/VLA_Diff/simulation/EGO-Planner-v3/devel/lib;/home/zhywwyzh/workspace/VLA_Diff/simulation/EGO-Planner-v2/devel/lib;/opt/ros/noetic/lib)
+    foreach(path /home/zhywwyzh/workspace/VLA_Diff/simulation/EGO-Planner-v3/devel/lib;/home/zhywwyzh/workspace/VLA_Diff/simulation/EGO-Planner-v3/devel/lib;/opt/ros/noetic/lib)
       find_library(lib ${library}
         PATHS ${path}
         NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
@@ -185,7 +185,7 @@ foreach(t ${cloud_filter_EXPORTED_TARGETS})
   endif()
 endforeach()
 
-set(depends "roscpp;sensor_msgs;nav_msgs;pcl_ros;pcl_conversions;message_filters")
+set(depends "roscpp;sensor_msgs;nav_msgs;pcl_ros;pcl_conversions;message_filters;geometry_msgs;quadrotor_msgs;tf")
 foreach(depend ${depends})
   string(REPLACE " " ";" depend_list ${depend})
   # the package name of the dependency must be kept in a unique variable so that it is not overwritten in recursive calls
