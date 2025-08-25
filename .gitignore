@@ -19,6 +19,7 @@ ros2_py310
 simulation/utils
 ai2thor
 unity
+pipeline/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

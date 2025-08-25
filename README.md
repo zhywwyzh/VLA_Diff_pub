@@ -142,3 +142,13 @@ source devel/setup.bash
 roslaunch mission_fsm multidrone_sim.launch
 roslaunch mission_fsm rviz.launch
 ```
+
+### 8. Run vllm
+```bash
+vllm serve /home/zhywwyzh/Modelscope/qwen2.5-vl-7B-Instruct-AWQ --dtype auto --port 6006 --max-model-len 3000 --gpu-memory-utilization 0.8
+```
+
+### 9. Run test in simulation-ros2
+```bash
+cd Openpi
+source .
