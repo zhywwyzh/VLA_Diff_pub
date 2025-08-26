@@ -122,6 +122,7 @@ uv run VLA_Diff/Openpi/scripts/serve_policy.py policy:checkpoint --policy.config
 
 ```bash
 cd VLA_Diff/Openpi/test/infer
+source .venv/bin/activate # Only needed if you are not in the environment of openpi
 python test_simulation.py
 ```
 
