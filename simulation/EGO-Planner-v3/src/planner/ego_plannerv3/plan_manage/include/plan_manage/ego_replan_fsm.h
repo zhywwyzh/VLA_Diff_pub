@@ -10,8 +10,11 @@
 #include <std_msgs/Empty.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/Int8.h>
+#include <std_msgs/Int32.h>
+#include <std_msgs/Bool.h>
 #include <vector>
 #include <visualization_msgs/Marker.h>
+#include <geometry_msgs/Twist.h>
 
 #include <optimizer/poly_traj_optimizer.h>
 #include <plan_env/grid_map.h>
@@ -53,7 +56,8 @@ namespace ego_planner
       EXEC_TRAJ,
       EMERGENCY_STOP,
       SEQUENTIAL_START,
-      CRASH_RECOVER
+      CRASH_RECOVER,
+      COMMAND_STOP
     };
     enum TARGET_TYPE
     {
@@ -102,7 +106,7 @@ namespace ego_planner
     ros::Time crash_rec_start_time_;
     ros::Time last_density_eval_time_{ros::Time(0)};
 
-    bool have_trigger_, have_target_, have_odom_, cur_traj_to_cur_target_, have_recv_pre_agent_, touch_goal_, mandatory_stop_;
+    bool have_trigger_, have_target_, have_odom_, cur_traj_to_cur_target_, have_recv_pre_agent_, touch_goal_, mandatory_stop_, command_stop_;
     bool has_been_modified_;
     FSM_EXEC_STATE exec_state_;
 
@@ -117,8 +121,8 @@ namespace ego_planner
     /* ROS utils */
     ros::NodeHandle node_;
     ros::Timer exec_timer_, safety_timer_;
-    ros::Subscriber waypoint_sub_, odom_sub_, trigger_sub_, broadcast_ploytraj_sub_, mandatory_stop_sub_;
-    ros::Publisher data_disp_pub_, broadcast_ploytraj_pub_, ground_height_pub_, state_pub_;
+    ros::Subscriber waypoint_sub_, odom_sub_, trigger_sub_, broadcast_ploytraj_sub_, mandatory_stop_sub_, command_sub_;
+    ros::Publisher data_disp_pub_, broadcast_ploytraj_pub_, ground_height_pub_, state_pub_, ego_state_trigger_pub_;
     ros::Publisher ego_plan_state_pub_;
 
     /* state machine functions */
@@ -156,6 +160,7 @@ namespace ego_planner
     /* utils */
     void initEgoPlanResult();
     void updateEgoPlanResult(const Eigen::Vector3d goal, PLAN_RET status);
+    void commandCallback(const std_msgs::Empty::ConstPtr& msg);
 
     /* ground height measurement */
     bool measureGroundHeight() const;

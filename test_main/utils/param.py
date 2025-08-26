@@ -5,6 +5,7 @@ class COMMAND_TYPE:
     NEXT = 3
     GO_ORIGIN = 4
     AGAIN = 5
+    EMERGENCY_STOP = 6
 
 class VLA_STATE:
     INIT = 0

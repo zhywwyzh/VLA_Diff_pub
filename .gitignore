@@ -21,6 +21,7 @@ simulation/utils
 ai2thor
 unity
 pipeline/
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

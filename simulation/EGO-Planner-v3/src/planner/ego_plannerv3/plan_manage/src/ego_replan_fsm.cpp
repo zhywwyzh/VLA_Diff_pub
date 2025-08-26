@@ -14,6 +14,7 @@ namespace ego_planner
     mandatory_stop_         = false;
     cur_traj_to_cur_target_ = false;
     has_been_modified_      = false;
+    command_stop_           = false;
     /*  fsm param  */
     nh.param("fsm/flight_type", target_type_, -1);//target_type_==2
     nh.param("fsm/emergency_time", emergency_time_, 1.0);
@@ -47,6 +48,8 @@ namespace ego_planner
     odom_sub_ = nh.subscribe("odom_world", 50, &EGOReplanFSM::odometryCallback, this);
     mandatory_stop_sub_ = nh.subscribe("mandatory_stop", 10, &EGOReplanFSM::mandatoryStopCallback, this);
 
+    command_sub_ = nh.subscribe("/command/emergency_stop", 10, &EGOReplanFSM::commandCallback, this);
+
     /* Use MINCO trajectory to minimize the message size in wireless communication */
     broadcast_ploytraj_pub_ = nh.advertise<traj_utils::MINCOTraj>("planning/broadcast_traj_send", 10);
     broadcast_ploytraj_sub_ = nh.subscribe<traj_utils::MINCOTraj>("planning/broadcast_traj_recv", 100,
@@ -58,6 +61,7 @@ namespace ego_planner
     ground_height_pub_  = nh.advertise<std_msgs::Float64>("/ground_height_measurement", 10);
     state_pub_          = nh.advertise<std_msgs::Int8>("state", 10);
     ego_plan_state_pub_ = nh.advertise<quadrotor_msgs::EgoPlannerResult>("/planning/ego_plan_result", 10);
+    ego_state_trigger_pub_ = nh.advertise<std_msgs::Bool>("/planning/ego_state_trigger", 10);
 
     // ROS_INFO("Wait for 3 seconds.");
     // ros::Time t0 = ros::Time::now();
@@ -268,6 +272,9 @@ namespace ego_planner
           ROS_ERROR("t_cur > info->duration but touch_goal_ is false! ERROR");
           changeFSMExecState(WAIT_TARGET, "EGOFSM"); // no better choises
         }
+        std_msgs::Bool trigger_msg;
+        trigger_msg.data = true;
+        ego_state_trigger_pub_.publish(trigger_msg); // 发布达到目的地信号
       }
       else if ((uk_see_alot || (!touch_goal_ && close_to_current_traj_end)) &&
                !close_to_final_goal) // case 3: time to perform next replan
@@ -295,11 +302,30 @@ namespace ego_planner
       }
       else
       {
-        if (enable_fail_safe_ && odom_vel_.norm() < 0.1)
+        if (enable_fail_safe_ && odom_vel_.norm() < 0.1){
           changeFSMExecState(GEN_NEW_TRAJ, "EGOFSM");
+        }
       }
 
       flag_escape_emergency_ = false;
+      break;
+    }
+
+    case COMMAND_STOP:
+    {
+      if (flag_escape_emergency_) {
+        callEmergencyStop(odom_pos_);
+        flag_escape_emergency_ = false;
+      }
+
+      // 强制停：一直悬停，直到新目标
+      if (command_stop_) {
+        goto force_return;  // 不要离开 EMERGENCY_STOP
+      }
+
+      if (enable_fail_safe_ && odom_vel_.norm() < 0.1) {
+        changeFSMExecState(GEN_NEW_TRAJ, "EGOFSM");
+      }
       break;
     }
 
@@ -490,6 +516,10 @@ namespace ego_planner
 
   void EGOReplanFSM::checkCollision()
   {
+      if (command_stop_) {
+      enable_fail_safe_ = false;
+      return;  // 指令悬停期间不做任何安全触发
+    }
     static ros::Time last_chk_time(0);
     ros::Time this_time = ros::Time::now();
     if (last_chk_time.toSec() > 10 && (this_time - last_chk_time).toSec() > 0.3)
@@ -1518,5 +1548,34 @@ namespace ego_planner
       ego_plan_result_.planner_goal.z = goal.z();
     }
     ego_plan_state_pub_.publish(ego_plan_result_);
+  }
+
+  void EGOReplanFSM::commandCallback(const std_msgs::Empty::ConstPtr& msg)
+  {
+    ROS_WARN("Emergency stop command received");
+
+    // 1) 标记强制停止，关闭自动 fail-safe 逻辑（防止自动重试移动）
+    command_stop_ = true;
+    enable_fail_safe_ = false;
+    flag_escape_emergency_ = true; // 允许立即执行 emergency stop 操作
+
+    // 2) 取消当前目标 / 触发，防止后续再次规划
+    have_target_ = false;
+    have_trigger_ = false;
+
+    // 3) 立刻调用 emergency stop 逻辑（如果已有 odom），这个函数会:
+    //    - 调用 planner_manager_->EmergencyStop(stop_pos)
+    //    - 把 emergency trajectory 通过 traj_server_ 发布出去
+    if (have_odom_) {
+      if (!callEmergencyStop(odom_pos_)) {
+        ROS_ERROR("callEmergencyStop failed!");
+      } else {
+        ROS_WARN("callEmergencyStop executed immediately.");
+      }
+    } else {
+      ROS_WARN("No odom available yet — EMERGENCY stop will be attempted when odom arrives.");
+    }
+    ROS_WARN("Emergency stop command received");
+    changeFSMExecState(COMMAND_STOP, "Command stop");
   }
 } // namespace ego_planner
