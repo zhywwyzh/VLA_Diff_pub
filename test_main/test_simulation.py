@@ -26,7 +26,7 @@ from cv_bridge import CvBridge
 from utils.vlm.openai_serve import open_serve
 from utils.param import COMMAND_TYPE, VLA_STATE
 
-from test_main.base_policy import BasePolicyNode  # 假定已有 ROS1 版本或与 ROS 无关的 Base
+from base_policy import BasePolicyNode  # 假定已有 ROS1 版本或与 ROS 无关的 Base
 from utils.server.publish_client import MessageClient
 from utils.server.receive_client import GeminiMessageClient
 

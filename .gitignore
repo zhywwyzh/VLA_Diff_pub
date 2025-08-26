@@ -16,7 +16,6 @@ city/
 simulation/EGO-Planner-v3/devel
 simulation/EGO-Planner-v3/build
 simulation/ROS-Unity_bridge/devel
-simulation/EGO-Planner-v3/build
 ros2_py310
 simulation/utils
 ai2thor
