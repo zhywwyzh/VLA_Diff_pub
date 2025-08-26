@@ -30,7 +30,7 @@ from utils.param import COMMAND_TYPE, VLA_STATE
 
 from base_policy import BasePolicyNode
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../..', 'pipeline'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'pipeline'))
 from client_example import GeminiMessageClient
 client = GeminiMessageClient()
 
@@ -96,6 +96,7 @@ class UAVPolicyNode(BasePolicyNode):
         self.vla_state = None
         self.frame = None
         self.ego_trigger = False
+        self.mllm_message = None
 
         # 创建图像保存目录
         self.image_save_dir = '/home/zhywwyzh/workspace/VLA_Diff/Openpi/test/infer/trail/saved_images'
@@ -137,6 +138,10 @@ class UAVPolicyNode(BasePolicyNode):
         self.port = self.get_parameter('port').get_parameter_value().integer_value
         self.replan_steps = self.get_parameter('replan_steps').get_parameter_value().integer_value
 
+        # 启动消息监听线程
+        self.listener_thread = threading.Thread(target=self.listen_messages, daemon=True)
+        self.listener_thread.start()
+
     def command_type_callback(self, msg):
         """处理指令需求回调"""
         self.command_type = msg.data
@@ -154,6 +159,28 @@ class UAVPolicyNode(BasePolicyNode):
     def command_content_callback(self, msg):
         """处理指令内容回调"""
         self.command_content.append(json.loads(msg.data))
+
+    def get_command_content(self):
+        """从mllm消息中提取指令内容"""
+        if self.mllm_message is not None:
+            try:
+                return self.mllm_message
+            except Exception as e:
+                self.get_logger().error(f"解析指令内容失败: {e}")
+                return None
+        return None
+
+    def listen_messages(self):
+        """循环监听mllm新消息"""
+        while rclpy.ok():  # 保证 ROS 正常运行时循环
+            try:
+                message = self.client.get_new_messages()
+                if message:
+                    self.mllm_message = message[0]["text"]
+                    self.get_logger().info(f"Received message: {self.mllm_message}")
+            except Exception as e:
+                self.get_logger().error(f"消息监听出错: {e}")
+            time.sleep(0.5)  # 控制循环频率
     
     def publish_action(self, action):
         """发布动作到ROS话题"""
@@ -190,6 +217,12 @@ class UAVPolicyNode(BasePolicyNode):
         waypoint = None
         self.vla_state = VLA_STATE.INIT
         self.last_plan_time = None
+
+        while rclpy.ok():
+            if self.mllm_message is not None:
+                self.get_logger().info(f"收到任务信息: {self.mllm_message}")
+                self.command_content = self.get_command_content()
+                self.mllm_message = None
 
         # 以下2部分后续可用task id直接替代
         def is_waypoint_cmd(cmd) -> bool:
@@ -275,7 +308,7 @@ class UAVPolicyNode(BasePolicyNode):
                     except Exception as e:
                         logging.error(f"规划失败: {e}")
                         self.vla_state = VLA_STATE.ERROR
-                
+                        
                 case VLA_STATE.PUBLISH:
                     try:
                         if waypoint is None:
