@@ -29,10 +29,9 @@ from utils.vlm.openai_serve import open_serve
 from utils.param import COMMAND_TYPE, VLA_STATE
 
 from base_policy import BasePolicyNode
+from test_main.utils.server.publish_client import MessageClient
+from utils.server.receive_client import GeminiMessageClient
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'pipeline'))
-from client_example import GeminiMessageClient
-client = GeminiMessageClient()
 
 class UAVPolicyNode(BasePolicyNode):
     def __init__(self):
@@ -126,6 +125,10 @@ class UAVPolicyNode(BasePolicyNode):
         self.client = None
         self.prompt = None
 
+        # 初始化mllm客户端
+        self.receive_client = GeminiMessageClient()
+        self.publish_client = MessageClient()
+
         # 轨迹存储
         self.original_trajectory = []
         self.inferred_trajectory = []
@@ -174,7 +177,7 @@ class UAVPolicyNode(BasePolicyNode):
         """循环监听mllm新消息"""
         while rclpy.ok():  # 保证 ROS 正常运行时循环
             try:
-                message = self.client.get_new_messages()
+                message = self.receive_client.get_new_messages()
                 if message:
                     self.mllm_message = message[0]["text"]
                     self.get_logger().info(f"Received message: {self.mllm_message}")
@@ -210,6 +213,26 @@ class UAVPolicyNode(BasePolicyNode):
             pose_msg.pose.orientation.z = float(action[5])
             pose_msg.pose.orientation.w = float(action[6])
         self.action_pub.publish(pose_msg)
+
+    def get_judgement(self, message):
+        """判断 message[0]['text'] 是否包含 True 或 False"""
+        try:
+            text = message[0]['text']
+            has_true = "True" in text
+            has_false = "False" in text
+            if has_true and has_false:
+                print("无法判断结果，请重试")
+                return False
+            elif has_true:
+                return True
+            elif has_false:
+                return False
+            else:
+                print("未收到相关结果，请重试")
+                return False
+        except Exception as e:
+            self.get_logger().error(f"提取判断结果失败: {e}")
+        return None
 
     def run_inference(self):
         """执行推理"""
