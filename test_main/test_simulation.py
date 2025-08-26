@@ -19,7 +19,9 @@ import rospy
 from sensor_msgs.msg import Image, CompressedImage, CameraInfo
 from std_msgs.msg import String, Int32, Empty
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Point
+from quadrotor_msgs.msg import GoalSet
+
 import cv2
 from cv_bridge import CvBridge
 
@@ -91,7 +93,7 @@ class UAVPolicyNode(BasePolicyNode):
 
         # 发布无人机动作
         self.action_pub = rospy.Publisher(
-            '/goal', PoseStamped, queue_size=10
+            '/goal_with_id_from_station', GoalSet, queue_size=10
         )
 
         # 发布急停指令
@@ -168,32 +170,32 @@ class UAVPolicyNode(BasePolicyNode):
                 rospy.logerr(f"消息监听出错: {e}")
             time.sleep(0.5)
 
-    def publish_action(self, action):
+    def publish_action(self, action, look_forward=False, goal_to_follower=False):
         """发布动作到ROS话题"""
         if len(action) < 3:
             logging.error("动作数据不足3个元素")
             return
 
-        pose_msg = PoseStamped()
-        pose_msg.header.stamp = rospy.Time.now()
-        pose_msg.header.frame_id = "map"
+        pose_msg = GoalSet()
+        pose_msg.to_drone_ids = [0]
 
         # 设置位置
-        pose_msg.pose.position.x = float(action[0])
-        pose_msg.pose.position.y = float(action[1])
-        pose_msg.pose.position.z = float(action[2])
+        pt = Point()
+        pt.x = float(action[0])
+        pt.y = float(action[1])
+        pt.z = float(action[2])
+        pose_msg.goal = [pt]
 
         # 姿态（若只给 xyz，则用单位四元数）
         if len(action) == 3:
-            pose_msg.pose.orientation.x = 0.0
-            pose_msg.pose.orientation.y = 0.0
-            pose_msg.pose.orientation.z = 0.0
-            pose_msg.pose.orientation.w = 1.0
+            roll, pitch, yaw = self.quaternion_to_euler(0.0, 0.0, 0.0, 1.0)
         else:
-            pose_msg.pose.orientation.x = float(action[3])
-            pose_msg.pose.orientation.y = float(action[4])
-            pose_msg.pose.orientation.z = float(action[5])
-            pose_msg.pose.orientation.w = float(action[6])
+            roll, pitch, yaw = self.quaternion_to_euler(float(action[3]), float(action[4]), float(action[5]), float(action[6]))
+        pose_msg.yaw = [yaw]
+
+        # 设置如何飞行
+        pose_msg.look_forward = look_forward
+        pose_msg.goal_to_follower = goal_to_follower
 
         self.action_pub.publish(pose_msg)
 
@@ -224,12 +226,12 @@ class UAVPolicyNode(BasePolicyNode):
         self.vla_state = VLA_STATE.INIT
         self.last_plan_time = None
 
-        while not rospy.is_shutdown():
-            if self.mllm_message is not None:
-                self.get_logger().info(f"收到任务信息: {self.mllm_message}")
-                self.command_content = self.get_command_content()
-                self.mllm_message.append(self.command_content)
-                break
+        # while not rospy.is_shutdown():
+        #     if self.mllm_message is not None:
+        #         self.get_logger().info(f"收到任务信息: {self.mllm_message}")
+        #         self.command_content = self.get_command_content()
+        #         self.mllm_message.append(self.command_content)
+        #         break
 
         def is_waypoint_cmd(c) -> bool:
             if isinstance(c, (list, tuple, np.ndarray)):
@@ -301,7 +303,7 @@ class UAVPolicyNode(BasePolicyNode):
                             rospy.loginfo(f"推理结果：{result}，是否达到目的地：{self.finish_mission}")
 
                             waypoint, self.replan = self.pixel_to_world(result, self.frame)
-                            rospy.loginfo(f"收到标签指令：{cmd}，将前往{waypoint}")
+                            rospy.loginfo(f"将前往{waypoint}")
                             self.vla_state = VLA_STATE.PUBLISH
 
                         else:
