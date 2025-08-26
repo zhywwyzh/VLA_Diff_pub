@@ -17,7 +17,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import rospy
 from sensor_msgs.msg import Image, CompressedImage, CameraInfo
-from std_msgs.msg import String, Int32
+from std_msgs.msg import String, Int32, Empty
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
 import cv2
@@ -58,13 +58,7 @@ class UAVPolicyNode(BasePolicyNode):
         self.last_command = None
         self.first_mission_frame = None
         self.first_plan = False
-        self.command_content = [
-            "请结合传入的图1初始观测结果和图2当前观测结果，前往左侧通道入口，给我它在图2中的二维坐标，只给坐标，其他的什么都不要输出。此外，请根据图1的初始观察结果，告诉我当我位于图2的观测位置时，是否到达了图1的预期目标空间位置。只返回True or False,其他什么都不要返回",
-            "请结合传入的图1初始观测结果和图2当前观测结果，找到右侧第一个门，给我它在图2中的二维坐标，只给坐标，其他什么都不要输出。此外，请根据图1的初始观察结果，告诉我当我位于图2的观测位置时，是否到达了图1的预期目标空间位置。只返回True or False,其他什么都不要返回",
-            "请结合传入的图1初始观测结果和图2当前观测结果，前往右侧门的右后方,给我它在图2中的二维坐标，只给坐标，其他什么都不要输出。此外，请根据图1的初始观察结果，告诉我当我位于图2的观测位置时，是否到达了图1的预期目标空间位置。只返回True or False,其他什么都不要返回",
-            "请结合传入的图1初始观测结果和图2当前观测结果，找到树的位置，给我它在图2中的二维坐标，只给坐标，其他什么都不要输出。此外，请根据图1的初始观察结果，告诉我当我位于图2的观测位置时，是否到达了图1的预期目标空间位置。只返回True or False,其他什么都不要返回",
-            "前进"
-        ]
+        self.command_content = []
         self.replan = False
         self.task_id = [1, 2, 2, 1]
         self.first_command = False
@@ -76,7 +70,7 @@ class UAVPolicyNode(BasePolicyNode):
         self.time_out = 10.0
         self.vla_state = None
         self.frame = None
-        self.ego_trigger = False
+        self.ego_state_trigger = False
         self.mllm_message = None
 
         # 创建图像保存目录
@@ -87,7 +81,7 @@ class UAVPolicyNode(BasePolicyNode):
         self.model_input_dir = '/home/zhywwyzh/workspace/VLA_Diff/Openpi/test/infer/trail/model_input_images'
         os.makedirs(self.model_input_dir, exist_ok=True)
 
-        # 订阅指令需求（ROS1）
+        # 订阅指令需求
         self.command_type_sub = rospy.Subscriber(
             "command/type", Int32, self.command_type_callback, queue_size=10
         )
@@ -95,9 +89,14 @@ class UAVPolicyNode(BasePolicyNode):
             "command/content", String, self.command_content_callback, queue_size=10
         )
 
-        # 发布无人机动作（ROS1）
+        # 发布无人机动作
         self.action_pub = rospy.Publisher(
             '/goal', PoseStamped, queue_size=10
+        )
+
+        # 发布急停指令
+        self.emergency_stop_pub = rospy.Publisher(
+            'command/emergency_stop', Empty, queue_size=10
         )
 
         # 初始化 WebSocket / 服务端客户端
@@ -135,6 +134,9 @@ class UAVPolicyNode(BasePolicyNode):
             self.vla_state = VLA_STATE.PLAN
         if self.command_type == COMMAND_TYPE.GO_ORIGIN:
             self.vla_state = VLA_STATE.GO_ORIGIN
+        if self.command_type == COMMAND_TYPE.EMERGENCY_STOP:
+            print("🛑 收到紧急停止指令")
+            self.emergency_stop_pub.publish(Empty())
 
     def command_content_callback(self, msg: String):
         """处理指令内容回调"""
@@ -160,6 +162,7 @@ class UAVPolicyNode(BasePolicyNode):
                 message = self.receive_client.get_new_messages()
                 if message:
                     self.mllm_message = message[0]["text"]
+                    self.command_content.append(self.mllm_message)
                     rospy.loginfo(f"Received message: {self.mllm_message}")
             except Exception as e:
                 rospy.logerr(f"消息监听出错: {e}")
@@ -225,20 +228,20 @@ class UAVPolicyNode(BasePolicyNode):
             if self.mllm_message is not None:
                 self.get_logger().info(f"收到任务信息: {self.mllm_message}")
                 self.command_content = self.get_command_content()
-                self.mllm_message = None
+                self.mllm_message.append(self.command_content)
                 break
 
-            def is_waypoint_cmd(c) -> bool:
-                if isinstance(c, (list, tuple, np.ndarray)):
-                    try:
-                        arr = np.array(c, dtype=float).reshape(-1)
-                        return arr.size >= 3 and np.all(np.isfinite(arr[:3]))
-                    except Exception:
-                        return False
-                return False
+        def is_waypoint_cmd(c) -> bool:
+            if isinstance(c, (list, tuple, np.ndarray)):
+                try:
+                    arr = np.array(c, dtype=float).reshape(-1)
+                    return arr.size >= 3 and np.all(np.isfinite(arr[:3]))
+                except Exception:
+                    return False
+            return False
 
-            def is_label_cmd(c) -> bool:
-                return isinstance(c, str) and len(c) > 0
+        def is_label_cmd(c) -> bool:
+            return isinstance(c, str) and len(c) > 0
 
         rospy.loginfo("任务开始")
 
@@ -257,7 +260,9 @@ class UAVPolicyNode(BasePolicyNode):
 
                 case VLA_STATE.WAIT:
                     if not self.command_content:
-                        self.vla_state = VLA_STATE.FINISH
+                        # self.vla_state = VLA_STATE.FINISH
+                        rospy.loginfo("当前任务为空，请传入下一步任务")
+                        time.sleep(1)
                         continue
                     if self.command_type == COMMAND_TYPE.GO:
                         self.vla_state = VLA_STATE.PLAN
@@ -266,11 +271,11 @@ class UAVPolicyNode(BasePolicyNode):
 
                 case VLA_STATE.PLAN:
                     try:
-                        if self.ego_trigger:
+                        if self.ego_state_trigger:
                             if self.finish_mission:
                                 rospy.loginfo("到达目的地，规划下一步任务")
                                 self.vla_state = VLA_STATE.WAIT
-                                self.ego_trigger = False
+                                self.ego_state_trigger = False
                                 self.command_content.pop(0)
                                 continue
 
@@ -363,7 +368,6 @@ def main():
     try:
         print("Program starting...")
         node = UAVPolicyNode()
-
         # 在单独的线程中运行推理循环
         inference_thread = threading.Thread(target=node.run_inference)
         inference_thread.start()

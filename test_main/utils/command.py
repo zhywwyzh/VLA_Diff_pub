@@ -8,6 +8,13 @@ class CommandPublisher(Node):
         super().__init__('command_publisher')
         self.type_pub = self.create_publisher(Int32, 'command/type', 10)
         self.content_pub = self.create_publisher(String, 'command/content', 10)
+        self.command_content = [
+            "请结合传入的图1初始观测结果和图2当前观测结果，前往左侧通道入口，给我它在图2中的二维坐标，只给坐标，其他的什么都不要输出。此外，请根据图1的初始观察结果，告诉我当我位于图2的观测位置时，是否到达了图1的预期目标空间位置。只返回True or False,其他什么都不要返回",
+            "请结合传入的图1初始观测结果和图2当前观测结果，找到右侧第一个门，给我它在图2中的二维坐标，只给坐标，其他什么都不要输出。此外，请根据图1的初始观察结果，告诉我当我位于图2的观测位置时，是否到达了图1的预期目标空间位置。只返回True or False,其他什么都不要返回",
+            "请结合传入的图1初始观测结果和图2当前观测结果，前往右侧门的右后方,给我它在图2中的二维坐标，只给坐标，其他什么都不要输出。此外，请根据图1的初始观察结果，告诉我当我位于图2的观测位置时，是否到达了图1的预期目标空间位置。只返回True or False,其他什么都不要返回",
+            "请结合传入的图1初始观测结果和图2当前观测结果，找到树的位置，给我它在图2中的二维坐标，只给坐标，其他什么都不要输出。此外，请根据图1的初始观察结果，告诉我当我位于图2的观测位置时，是否到达了图1的预期目标空间位置。只返回True or False,其他什么都不要返回",
+            "前进"
+        ]
 
     def parse_content(self, raw: str):
         """解析输入: 返回合法字符串 或 list[6个float]，否则返回 None"""
@@ -43,40 +50,43 @@ class CommandPublisher(Node):
         while rclpy.ok():
             # ===== 输入 command/type =====
             cmd_type = None
-            while cmd_type not in [0, 1, 2, 3, 4, 5]:
+            while cmd_type not in [0, 1, 2, 3, 4, 5, 6]:
                 try:
-                    cmd_type = int(input("请输入 command/type (0,1,2,3,4,5): "))
+                    cmd_type = int(input("请输入 command/type (0:wait, 1:stop, 2:go, 3:next, 4:go_origin, 5:again, 6:emergency_stop): "))
                 except ValueError:
-                    print("❌ 输入必须是整数 (0,1,2,3,4,5)")
+                    print("❌ 输入必须是整数 (0,1,2,3,4,5,6)")
                     continue
-                if cmd_type not in [0, 1, 2, 3, 4, 5]:
-                    print("❌ 输入错误，请输入 0, 1, 2, 3, 4 或 5")
-
-            # 发布 type
-            type_msg = Int32()
-            type_msg.data = cmd_type
-            self.type_pub.publish(type_msg)
-            self.get_logger().info(f"✅ Published command/type: {cmd_type}")
+                if cmd_type not in [0, 1, 2, 3, 4, 5, 6]:
+                    print("❌ 输入错误，请输入 0, 1, 2, 3, 4, 5 或 6")
 
             if cmd_type == 1:
                 print("🛑 收到 type=1，程序结束")
                 break
 
             elif cmd_type == 2:
-                # raw = input("请输入 command/content (字符串 或 list[6个float]): ")
-                # content = self.parse_content(raw)
+                raw = input("please press enter to continue: ")
+                # print(f"type of command_content: {type(raw)}")
+                content = self.parse_content(raw)
                 print("执行下一步任务")
 
-                # if content is None:
-                #     print("❌ content 输入非法，返回到 type 阶段")
-                #     continue  # 直接回到 type 输入
+                if content is None:
+                    print("❌ content 输入非法，返回到 type 阶段")
+                    continue  # 直接回到 type 输入
 
-                # content_msg = String()
-                # content_msg.data = content
-                # self.content_pub.publish(content_msg)
-                # self.get_logger().info(f"✅ Published command/content: {content}")
+                content_msg = String()
+                content_msg.data = content
+                self.content_pub.publish(content_msg)
+                self.get_logger().info(f"✅ Published command/content: {content}")
 
-            # type==0 直接下一轮
+            if cmd_type == 0:
+                # 直接下一轮
+                continue
+
+            # 发布 type
+            type_msg = Int32()
+            type_msg.data = cmd_type
+            self.type_pub.publish(type_msg)
+            self.get_logger().info(f"✅ Published command/type: {cmd_type}")
 
 def main(args=None):
     rclpy.init(args=args)
