@@ -1,4 +1,6 @@
 import requests
+import cv2
+import base64
 
 class MessageClient:
     def __init__(self, base_url="3001"):
@@ -13,10 +15,21 @@ class MessageClient:
         :param priority: 消息优先级，可选，示例 "urgent"
         :return: 响应对象
         """
+        # if img:
+        #     _, buffer_ori = cv2.imencode('.jpg', img[0])
+        #     img_ori_base64 = base64.b64encode(buffer_ori).decode('utf-8')
+        #     data_url_ori = f'data:image/jpeg;base64,{img_ori_base64}'
+
+        #     _, buffer_cur = cv2.imencode('.jpg', img[1])
+        #     img_cur_base64 = base64.b64encode(buffer_cur).decode('utf-8')
+        #     data_url_cur = f'data:image/jpeg;base64,{img_cur_base64}'
+
         payload = {
             "text": text,
-            "sender": sender
+            "sender": sender,
+            "type": type
         }
+        
         if priority:
             payload["priority"] = priority
 
@@ -36,6 +49,9 @@ class MessageClient:
         """发送高优先级消息"""
         return self.send_message(text, sender, type, priority="urgent")
 
+    def send_image(self, img, text: str, sender: str, type: str = "text", priority: str = None):
+        """发送图像消息"""
+        return self.send_message(img, text, sender, type, priority)
 
 if __name__ == "__main__":
     client = MessageClient()
