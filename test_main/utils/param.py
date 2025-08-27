@@ -17,4 +17,5 @@ class VLA_STATE:
     STOP = 6
     ERROR = 7
     GO_ORIGIN = 8
+    REPLY_MLLM = 9
 
