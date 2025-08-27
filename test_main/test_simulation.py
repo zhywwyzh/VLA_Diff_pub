@@ -17,7 +17,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import rospy
 from sensor_msgs.msg import Image, CompressedImage, CameraInfo
-from std_msgs.msg import String, Int32, Empty
+from std_msgs.msg import String, Int32, Empty, Bool
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped, Point
 from quadrotor_msgs.msg import GoalSet
@@ -63,7 +63,6 @@ class UAVPolicyNode(BasePolicyNode):
         self.command_content = []
         self.replan = False
         self.task_id = [1, 2, 2, 1]
-        self.first_command = False
         self.command_type = COMMAND_TYPE.WAIT
         self.task_id_mllm = []
         self.task_id_vlm = []
@@ -89,6 +88,11 @@ class UAVPolicyNode(BasePolicyNode):
         )
         self.command_content_sub = rospy.Subscriber(
             "command/content", String, self.command_content_callback, queue_size=10
+        )
+
+        # 订阅ego_planner的状态指令
+        self.ego_state_trigger_sub = rospy.Subscriber(
+            "/planning/ego_state_trigger", Bool, self.ego_state_trigger_callback, queue_size=10
         )
 
         # 发布无人机动作
@@ -146,6 +150,12 @@ class UAVPolicyNode(BasePolicyNode):
             self.command_content.append(json.loads(msg.data))
         except Exception as e:
             rospy.logerr(f"解析 command/content 失败: {e}")
+
+    def ego_state_trigger_callback(self, msg: Bool):
+        """处理ego_state_trigger回调"""
+        self.ego_state_trigger = msg.data
+        # rospy.loginfo(f"当前ego_state_trigger状态: {self.ego_state_trigger}")
+        self.val_state = VLA_STATE.PLAN
 
     def get_command_content(self):
         """从mllm消息中提取指令内容"""
@@ -226,12 +236,12 @@ class UAVPolicyNode(BasePolicyNode):
         self.vla_state = VLA_STATE.INIT
         self.last_plan_time = None
 
-        # while not rospy.is_shutdown():
-        #     if self.mllm_message is not None:
-        #         self.get_logger().info(f"收到任务信息: {self.mllm_message}")
-        #         self.command_content = self.get_command_content()
-        #         self.mllm_message.append(self.command_content)
-        #         break
+        while not rospy.is_shutdown():
+            if self.mllm_message is not None:
+                self.get_logger().info(f"收到任务信息: {self.mllm_message}")
+                self.command_content = self.get_command_content()
+                self.mllm_message.append(self.command_content)
+                break
 
         def is_waypoint_cmd(c) -> bool:
             if isinstance(c, (list, tuple, np.ndarray)):
@@ -299,7 +309,8 @@ class UAVPolicyNode(BasePolicyNode):
                                 self.first_plan = True
                                 self.first_mission_frame = self.frame.rgb_image.copy()
 
-                            result, self.finish_mission = open_serve(self.first_mission_frame, self.frame.rgb_image, cmd)
+                            # result, self.finish_mission = open_serve(self.first_mission_frame, self.frame.rgb_image, cmd)
+                            response = self.publish_client.send_image([self.first_mission_frame, self.frame.rgb_image], cmd, "uav_policy_node")
                             rospy.loginfo(f"推理结果：{result}，是否达到目的地：{self.finish_mission}")
 
                             waypoint, self.replan = self.pixel_to_world(result, self.frame)
@@ -324,15 +335,19 @@ class UAVPolicyNode(BasePolicyNode):
                             continue
 
                         self.publish_action(waypoint)
-                        self.vla_state = VLA_STATE.PLAN
+                        self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
                         print(f"发布导航点: {waypoint}")
                         self.last_state = np.array([waypoint[0], waypoint[1], waypoint[2], 0, 0, 0], dtype=np.float64)
-                        self.first_command = True
-                        time.sleep(0.5)  # 等待动作发布完成
+                        # time.sleep(0.5)  # 等待动作发布完成
 
                     except Exception as e:
                         logging.error(f"发布: {e}")
                         self.vla_state = VLA_STATE.ERROR
+                
+                case VLA_STATE.WAIT_ACTION_FINISH:
+                    self.frame = self.get_frame_snapshot()
+                    time.sleep(0.1)
+                    continue
 
                 case VLA_STATE.FINISH:
                     rospy.loginfo("所有任务完成")
