@@ -1,13 +1,17 @@
-import rclpy
-from rclpy.node import Node
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import rospy
 from std_msgs.msg import Int32, String
 import ast
 
-class CommandPublisher(Node):
+class CommandPublisher:
     def __init__(self):
-        super().__init__('command_publisher')
-        self.type_pub = self.create_publisher(Int32, 'command/type', 10)
-        self.content_pub = self.create_publisher(String, 'command/content', 10)
+        rospy.init_node("command_publisher", anonymous=True)
+
+        self.type_pub = rospy.Publisher("command/type", Int32, queue_size=10)
+        self.content_pub = rospy.Publisher("command/content", String, queue_size=10)
+
         self.command_content = [
             "请结合传入的图1初始观测结果和图2当前观测结果，前往左侧通道入口，给我它在图2中的二维坐标，只给坐标，其他的什么都不要输出。此外，请根据图1的初始观察结果，告诉我当我位于图2的观测位置时，是否到达了图1的预期目标空间位置。只返回True or False,其他什么都不要返回",
             "请结合传入的图1初始观测结果和图2当前观测结果，找到右侧第一个门，给我它在图2中的二维坐标，只给坐标，其他什么都不要输出。此外，请根据图1的初始观察结果，告诉我当我位于图2的观测位置时，是否到达了图1的预期目标空间位置。只返回True or False,其他什么都不要返回",
@@ -16,11 +20,11 @@ class CommandPublisher(Node):
             "前进"
         ]
 
-    def parse_content(self, raw: str):
+    def parse_content(self, raw):
         """解析输入: 返回合法字符串 或 list[6个float]，否则返回 None"""
         raw = raw.strip()
 
-        # 尝试解析成 Python 对象（比如 [1,2,3,4,5,6]）
+        # 尝试解析 Python list
         try:
             parsed = ast.literal_eval(raw)
             if isinstance(parsed, list):
@@ -32,7 +36,7 @@ class CommandPublisher(Node):
         except Exception:
             pass
 
-        # 尝试逗号分割 "0,0,0,0,0,0"
+        # 尝试逗号分割
         try:
             parts = [float(x) for x in raw.split(',')]
             if len(parts) == 6:
@@ -40,14 +44,15 @@ class CommandPublisher(Node):
         except Exception:
             pass
 
-        # 如果不是 list，就当成字符串（非空才接受）
+        # 直接作为字符串
         if raw:
             return raw
 
         return None
 
     def run(self):
-        while rclpy.ok():
+        rate = rospy.Rate(10)  # 10Hz 循环
+        while not rospy.is_shutdown():
             # ===== 输入 command/type =====
             cmd_type = None
             while cmd_type not in [0, 1, 2, 3, 4, 5, 6]:
@@ -65,18 +70,17 @@ class CommandPublisher(Node):
 
             elif cmd_type == 2:
                 raw = input("please press enter to continue: ")
-                # print(f"type of command_content: {type(raw)}")
                 content = self.parse_content(raw)
                 print("执行下一步任务")
 
                 if content is None:
                     print("❌ content 输入非法，返回到 type 阶段")
-                    continue  # 直接回到 type 输入
+                    continue
 
                 content_msg = String()
                 content_msg.data = content
                 self.content_pub.publish(content_msg)
-                self.get_logger().info(f"✅ Published command/content: {content}")
+                rospy.loginfo("✅ Published command/content: %s", content)
 
             if cmd_type == 0:
                 # 直接下一轮
@@ -86,18 +90,16 @@ class CommandPublisher(Node):
             type_msg = Int32()
             type_msg.data = cmd_type
             self.type_pub.publish(type_msg)
-            self.get_logger().info(f"✅ Published command/type: {cmd_type}")
+            rospy.loginfo("✅ Published command/type: %d", cmd_type)
 
-def main(args=None):
-    rclpy.init(args=args)
+            rate.sleep()
+
+def main():
     node = CommandPublisher()
     try:
         node.run()
-    except KeyboardInterrupt:
+    except rospy.ROSInterruptException:
         print("\n🛑 Ctrl+C 退出程序")
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
