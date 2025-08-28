@@ -2,7 +2,7 @@ import os
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'pipeline'))
-from client_example import GeminiMessageClient
+from utils.server.receive_client import GeminiMessageClient
 
 client = GeminiMessageClient()
 message = None
