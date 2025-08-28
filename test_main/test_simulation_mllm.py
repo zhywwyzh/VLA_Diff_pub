@@ -157,7 +157,7 @@ class UAVPolicyNode(BasePolicyNode):
         """处理ego_state_trigger回调"""
         self.ego_state_trigger = msg.data
         # rospy.loginfo(f"当前ego_state_trigger状态: {self.ego_state_trigger}")
-        self.val_state = VLA_STATE.REPLY_MLLM
+        self.vla_state = VLA_STATE.REPLY_MLLM
 
     def get_command_content(self):
         """从mllm消息中提取指令内容"""
@@ -178,8 +178,10 @@ class UAVPolicyNode(BasePolicyNode):
                     value = message[0]["text"]
                     # if isinstance(value, tuple):
                     value = list(ast.literal_eval(value))
+                    # value.reverse()
                     print(f"🦄 收到新消息: {value}, type: {type(value)}")
-                    self.result = [int(value[0]/1920*640), int(value[1]/1080*480)]
+                    self.result = [int(x) for x in value]
+                    print(f"result:{self.result}")
                     self.vla_state = VLA_STATE.PLAN
             except Exception as e:
                 rospy.logerr(f"消息监听出错: {e}")
@@ -240,6 +242,7 @@ class UAVPolicyNode(BasePolicyNode):
         waypoint = None
         self.vla_state = VLA_STATE.INIT
         self.last_plan_time = None
+        rospy.loginfo("等待传感器准备...")
 
         while self.get_frame_snapshot() is None:
             time.sleep(1)
@@ -296,6 +299,7 @@ class UAVPolicyNode(BasePolicyNode):
                     rospy.loginfo("到达目的地，基于MLLM回复")
                     self.vla_state = VLA_STATE.WAIT
                     response = self.publish_client.send_image(self.frame.rgb_image)
+                    rospy.loginfo(f"当前帧接收状态: {response['message']}")
                     continue
 
                 case VLA_STATE.PLAN:
