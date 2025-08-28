@@ -17,6 +17,13 @@ GIT_LFS_SKIP_SMUDGE=1 uv pip install -e .
 
 NOTE: `GIT_LFS_SKIP_SMUDGE=1` is needed to pull LeRobot as a dependency.
 
+## Install ROS1 in Ubuntu22.04
+```bash
+echo "deb [trusted=yes arch=amd64] http://deb.repo.autolabor.com.cn jammy main" | sudo tee /etc/apt/sources.list.d/autolabor.list
+sudo apt update
+sudo apt install ros-noetic-autolabor
+```
+
 ## Modify the dependent code:
 
 1. In the file `.venv/lib/python3.11/site-packages/lerobot/common/datasets/lerobot_dataset.py`:
