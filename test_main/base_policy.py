@@ -77,56 +77,52 @@ class BasePolicyNode(object):
     def synced_callback(self, odom_msg: Odometry,
                         rgb_msg: CompressedImage,
                         depth_msg: CompressedImage):
-        try:
-            # 1) 读取（相机=里程计坐标）世界位姿
-            pos = odom_msg.pose.pose.position
-            ori = odom_msg.pose.pose.orientation
-            roll_c, pitch_c, yaw_c = self.quaternion_to_euler(ori.x, ori.y, ori.z, ori.w)
+        # 1) 读取（相机=里程计坐标）世界位姿
+        pos = odom_msg.pose.pose.position
+        ori = odom_msg.pose.pose.orientation
+        roll_c, pitch_c, yaw_c = self.quaternion_to_euler(ori.x, ori.y, ori.z, ori.w)
 
-            R_wr   = self.euler_rpy_to_R(roll_c, pitch_c, yaw_c)   # 机器人(=相机)->世界
-            p_w_cam = np.array([pos.x, pos.y, pos.z], dtype=np.float64)
+        R_wr   = self.euler_rpy_to_R(roll_c, pitch_c, yaw_c)   # 机器人(=相机)->世界
+        p_w_cam = np.array([pos.x, pos.y, pos.z], dtype=np.float64)
 
-            # p_w_cam = R_wr * t_rc + p_w_robot  =>  p_w_robot = p_w_cam - R_wr * t_rc
-            p_w_robot = p_w_cam - (R_wr @ self.extrinsics)
+        # p_w_cam = R_wr * t_rc + p_w_robot  =>  p_w_robot = p_w_cam - R_wr * t_rc
+        p_w_robot = p_w_cam - (R_wr @ self.extrinsics)
 
-            current_depth_state = np.array([p_w_cam[0], p_w_cam[1], p_w_cam[2],
-                                            roll_c, pitch_c, yaw_c], dtype=np.float64)
-            current_state = np.array([p_w_robot[0], p_w_robot[1], p_w_robot[2],
-                                      roll_c, pitch_c, yaw_c], dtype=np.float64)
+        current_depth_state = np.array([p_w_cam[0], p_w_cam[1], p_w_cam[2],
+                                        roll_c, pitch_c, yaw_c], dtype=np.float64)
+        current_state = np.array([p_w_robot[0], p_w_robot[1], p_w_robot[2],
+                                    roll_c, pitch_c, yaw_c], dtype=np.float64)
 
-            # 2) 解码图像
-            np_arr = np.frombuffer(rgb_msg.data, np.uint8)
-            cv_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-            rgb_image = cv_image.copy()
+        # 2) 解码图像
+        np_arr = np.frombuffer(rgb_msg.data, np.uint8)
+        cv_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        rgb_image = cv_image.copy()
 
-            np_arr = np.frombuffer(depth_msg.data, np.uint8)
-            depth = cv2.imdecode(np_arr, cv2.IMREAD_UNCHANGED)
+        np_arr = np.frombuffer(depth_msg.data, np.uint8)
+        depth = cv2.imdecode(np_arr, cv2.IMREAD_UNCHANGED)
 
-            # 假设深度编码：8bit 0..255 -> 0..10 m
-            if depth.ndim == 3:
-                depth_m = depth[:, :, 0]
-            else:
-                depth_m = depth
+        # 假设深度编码：8bit 0..255 -> 0..10 m
+        if depth.ndim == 3:
+            depth_m = depth[:, :, 0]
+        else:
+            depth_m = depth
 
-            depth_32 = (255.0 - depth_m.astype(np.float32)) / 255.0 * 30.0
+        depth_32 = (255.0 - depth_m.astype(np.float32)) / 255.0 * 30.0
 
-            # print(f"depth信息：{depth_32}")
-            depth_32[depth_32 == 0] = 30.1
-            depth_image = depth_32.copy()
+        # print(f"depth信息：{depth_32}")
+        depth_32[depth_32 == 0] = 30.1
+        depth_image = depth_32.copy()
 
-            stamp = odom_msg.header.stamp.to_sec()
+        stamp = odom_msg.header.stamp.to_sec()
 
-            frame = Frame(rgb_image=rgb_image,
-                          depth_image=depth_image,
-                          current_state=current_state,
-                          current_depth_state=current_depth_state,
-                          stamp=stamp)
-            with self.frame_lock:
-                self.publish_current_state(current_state, stamp)
-                self.frame = frame
-
-        except Exception as e:
-            logging.error(f"同步回调处理错误: {e}")
+        frame = Frame(rgb_image=rgb_image,
+                        depth_image=depth_image,
+                        current_state=current_state,
+                        current_depth_state=current_depth_state,
+                        stamp=stamp)
+        with self.frame_lock:
+            self.publish_current_state(current_state, stamp)
+            self.frame = frame
 
     def depth_info_callback(self, msg: CameraInfo):
         """处理深度相机参数回调（只取一次后注销订阅）"""
@@ -137,10 +133,7 @@ class BasePolicyNode(object):
                 'cx': msg.K[2], 'cy': msg.K[5],
                 'fov': 57.0
             }
-            try:
-                self.depth_info_sub.unregister()
-            except Exception:
-                pass
+            self.depth_info_sub.unregister()
 
     def quaternion_to_euler(self, x, y, z, w):
         """四元数 -> 欧拉角 (roll, pitch, yaw)"""
@@ -273,10 +266,13 @@ class BasePolicyNode(object):
         replan = False
 
         # ---------- 0) 读入像素与相机参数 ----------
-        u, v = float(results[0]), float(results[1])
+        u, v = float(results["pos"][0]), float(results["pos"][1])
+        delta_yaw = float(results.get("yaw", 0.0))
         fx, fy, cx, cy = (self.depth_info['fx'], self.depth_info['fy'],
                           self.depth_info['cx'], self.depth_info['cy'])
-        
+
+        print(f"fx:{fx}, fy:{fy}, cx:{cx}, cy:{cy}")
+
         # pdb.set_trace()
         # 方向（OpenCV 光学系：x右、y下、z前）
         dx = (u - cx) / (fx if abs(fx) > 1e-12 else 1e-12)
@@ -326,6 +322,7 @@ class BasePolicyNode(object):
 
         # ---------- 4) 相机机体系→世界系（使用深度相机世界位姿） ----------
         tx_c, ty_c, tz_c, roll_c, pitch_c, yaw_c = map(float, frame.current_depth_state.tolist())
+        roll, pitch, yaw = map(float, frame.current_depth_state[3:6].tolist())
         R_w_cam = self.euler_rpy_to_R(roll_c, pitch_c, yaw_c)
         t_wc = np.array([tx_c, ty_c, tz_c], dtype=np.float64)
 
@@ -345,8 +342,15 @@ class BasePolicyNode(object):
         # ---------- 6) 到世界系 ----------
         # P_w = R_w_cam @ P_cam_safe + t_wc
         P_w = (R_w_cam @ P_cam.T).T + t_wc  # [N,3]
-        self._publish_p2w_marker(P_w, frame.stamp)
-        return P_w, replan
+        P_w_full = np.concatenate([P_w, np.array([roll, pitch, yaw], dtype=np.float64)])
+        self._publish_p2w_marker(P_w_full, frame.stamp)
+        return P_w_full, replan
+
+    def calculate_posture(self, current_state, delta_yaw):
+        """计算姿态"""
+        if delta_yaw > 0.0 + 1e-6:
+            current_state[5] += delta_yaw
+        return current_state
 
     def publish_current_state(self, current_state: np.ndarray, stamp: float):
         msg = PoseStamped()
@@ -371,12 +375,9 @@ class BasePolicyNode(object):
         frame = self.get_frame_snapshot()
         if frame is None or frame.depth_image is None:
             return
-        try:
-            cloud_msg = self._build_pointcloud_from_frame(frame)
-            if cloud_msg is not None:
-                self.cloud_pub.publish(cloud_msg)
-        except Exception as e:
-            logging.error(f"发布点云失败: {e}")
+        cloud_msg = self._build_pointcloud_from_frame(frame)
+        if cloud_msg is not None:
+            self.cloud_pub.publish(cloud_msg)
 
     def _build_pointcloud_from_frame(self, frame: Frame) -> Optional[PointCloud2]:
         """

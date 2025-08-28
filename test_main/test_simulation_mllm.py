@@ -46,35 +46,25 @@ class UAVPolicyNode(BasePolicyNode):
         self.bridge = CvBridge()
 
         # 存储最新的状态和图像
-        self.current_image = None
-        self.current_wrist_image = None
         self.first_image = None
-        self.first_image_received = False
-        self.count = 0
-        self.save_count = 0
-        self.image_save_count = 0
         self.last_state = [0, 0, 1, 0, 0, 0]
         self.last_plan_time = None
         self.inference_timeout = 5.0
-        self.save = None
-        self.plan = True
         self.last_command = None
         self.first_mission_frame = None
-        self.first_plan = False
         self.command_content = []
         self.replan = False
         self.task_id = [1, 2, 2, 1]
         self.command_type = COMMAND_TYPE.WAIT
         self.task_id_mllm = []
         self.task_id_vlm = []
-        self.pub_goal = False
-        self.arrival_distance = 0.1
-        self.time_out = 10.0
         self.vla_state = None
         self.frame = None
         self.ego_state_trigger = False
         self.mllm_message = None
+        self.if_yaw = False
         self.result = None
+        self.waypoint = None
 
         # 创建图像保存目录
         self.image_save_dir = '/home/zhywwyzh/workspace/VLA_Diff/Openpi/test/infer/trail/saved_images'
@@ -148,25 +138,23 @@ class UAVPolicyNode(BasePolicyNode):
 
     def command_content_callback(self, msg: String):
         """处理指令内容回调"""
-        try:
-            self.command_content.append(json.loads(msg.data))
-        except Exception as e:
-            rospy.logerr(f"解析 command/content 失败: {e}")
+        self.command_content.append(json.loads(msg.data))
 
     def ego_state_trigger_callback(self, msg: Bool):
         """处理ego_state_trigger回调"""
         self.ego_state_trigger = msg.data
         # rospy.loginfo(f"当前ego_state_trigger状态: {self.ego_state_trigger}")
-        self.vla_state = VLA_STATE.REPLY_MLLM
+        if self.if_yaw:
+            self.publish_action(self.waypoint, look_forward=True)
+            self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+            self.if_yaw = False
+        else:
+            self.vla_state = VLA_STATE.REPLY_MLLM
 
     def get_command_content(self):
         """从mllm消息中提取指令内容"""
         if self.mllm_message is not None:
-            try:
-                return self.mllm_message
-            except Exception as e:
-                rospy.logerr(f"解析指令内容失败: {e}")
-                return None
+            return self.mllm_message
         return None
 
     def listen_messages(self):
@@ -177,11 +165,30 @@ class UAVPolicyNode(BasePolicyNode):
                 if message:
                     value = message[0]["text"]
                     # if isinstance(value, tuple):
-                    value = list(ast.literal_eval(value))
+                    # value = list(ast.literal_eval(value))
                     # value.reverse()
-                    print(f"🦄 收到新消息: {value}, type: {type(value)}")
-                    self.result = [int(x) for x in value]
-                    print(f"result:{self.result}")
+                    print(f"🦄 收到新消息: {value}")
+                    # 判断是否包含yaw
+                    if "," in value and value.count(")") >= 1:
+                        # 拆分 (pos部分) 和 yaw部分
+                        pos_str, yaw_str = value.split(")", 1)
+                        pos_str = pos_str + ")"   # 补回右括号
+                        pos = list(ast.literal_eval(pos_str))
+                        yaw = float(yaw_str.strip(", "))  # 处理 -90 这样的字符串
+                        self.if_yaw = True
+                        self.result = {
+                            "pos": [int(x) for x in pos],
+                            "yaw": yaw
+                        }
+                    else:
+                        # 只有pos部分
+                        pos = list(ast.literal_eval(value))
+                        self.result = {
+                            "pos": [int(x) for x in pos],
+                            "yaw": 0.0
+                        }
+                    # self.result = [int(x) for x in value]
+                    # print(f"result:{self.result}")
                     self.vla_state = VLA_STATE.PLAN
             except Exception as e:
                 rospy.logerr(f"消息监听出错: {e}")
@@ -205,9 +212,9 @@ class UAVPolicyNode(BasePolicyNode):
 
         # 姿态（若只给 xyz，则用单位四元数）
         if len(action) == 3:
-            roll, pitch, yaw = self.quaternion_to_euler(0.0, 0.0, 0.0, 1.0)
+            roll, pitch, yaw = 0.0, 0.0, 0.0, 1.0
         else:
-            roll, pitch, yaw = self.quaternion_to_euler(float(action[3]), float(action[4]), float(action[5]), float(action[6]))
+            roll, pitch, yaw = float(action[3]), float(action[4]), float(action[5])
         pose_msg.yaw = [yaw]
 
         # 设置如何飞行
@@ -218,22 +225,19 @@ class UAVPolicyNode(BasePolicyNode):
 
     def get_judgement(self, message):
         """判断是否包含 True 或 False"""
-        try:
-            text = message[0]['text']
-            has_true = "True" in text
-            has_false = "False" in text
-            if has_true and has_false:
-                print("无法判断结果，请重试")
-                return False
-            elif has_true:
-                return True
-            elif has_false:
-                return False
-            else:
-                print("未收到相关结果，请重试")
-                return False
-        except Exception as e:
-            rospy.logerr(f"提取判断结果失败: {e}")
+        text = message[0]['text']
+        has_true = "True" in text
+        has_false = "False" in text
+        if has_true and has_false:
+            print("无法判断结果，请重试")
+            return False
+        elif has_true:
+            return True
+        elif has_false:
+            return False
+        else:
+            print("未收到相关结果，请重试")
+            return False
         return None
 
     def run_inference(self):
@@ -260,11 +264,8 @@ class UAVPolicyNode(BasePolicyNode):
 
         def is_waypoint_cmd(c) -> bool:
             if isinstance(c, (list, tuple, np.ndarray)):
-                try:
-                    arr = np.array(c, dtype=float).reshape(-1)
-                    return arr.size >= 3 and np.all(np.isfinite(arr[:3]))
-                except Exception:
-                    return False
+                arr = np.array(c, dtype=float).reshape(-1)
+                return arr.size >= 3 and np.all(np.isfinite(arr[:3]))
             return False
 
         def is_label_cmd(c) -> bool:
@@ -313,6 +314,7 @@ class UAVPolicyNode(BasePolicyNode):
                         rospy.loginfo(f"推理结果：{self.result}")
 
                         waypoint, self.replan = self.pixel_to_world(self.result, self.frame)
+                        self.waypoint = waypoint
                         rospy.loginfo(f"将前往{waypoint}")
                         self.vla_state = VLA_STATE.PUBLISH
 
@@ -377,27 +379,18 @@ def main():
     logging.basicConfig(level=logging.INFO)
     rospy.init_node('uav_policy_node', anonymous=True)
 
-    try:
-        print("Program starting...")
+    print("Program starting...")
 
-        node = UAVPolicyNode()
-        # 在单独的线程中运行推理循环
-        inference_thread = threading.Thread(target=node.run_inference)
-        inference_thread.start()
+    node = UAVPolicyNode()
+    # 在单独的线程中运行推理循环
+    inference_thread = threading.Thread(target=node.run_inference)
+    inference_thread.start()
 
-        # 主线程运行 ROS1 spin
-        rospy.spin()
+    # 主线程运行 ROS1 spin
+    rospy.spin()
 
-        # 等待推理线程结束
-        inference_thread.join()
-
-    except KeyboardInterrupt:
-        pass
-    except Exception as e:
-        logging.error(f"主程序错误: {e}")
-    finally:
-        # ROS1 无需 destroy_node；若有清理逻辑可在此添加
-        pass
+    # 等待推理线程结束
+    inference_thread.join()
 
 
 if __name__ == "__main__":
