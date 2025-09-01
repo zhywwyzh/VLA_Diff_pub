@@ -35,11 +35,7 @@ from utils.server.receive_client import GeminiMessageClient
 
 class UAVPolicyNode(BasePolicyNode):
     def __init__(self):
-        # ROS1 节点初始化在 main() 中完成；这里不再 super().__init__('uav_policy_node')（若你的 Base 需要，可显式调用）
-        try:
-            super().__init__()  # 如果你的 BasePolicyNode 构造函数无需参数且兼容 ROS1，保留；否则可去掉
-        except Exception:
-            pass
+        super().__init__()
 
         # 创建CV桥接器
         self.bridge = CvBridge()
@@ -60,7 +56,7 @@ class UAVPolicyNode(BasePolicyNode):
         self.last_command = None
         self.first_mission_frame = None
         self.first_plan = False
-        self.command_content = []
+        self.command_content = ['start_mission']
         self.replan = False
         self.task_id = [1, 2, 2, 1]
         self.command_type = COMMAND_TYPE.WAIT
@@ -73,6 +69,10 @@ class UAVPolicyNode(BasePolicyNode):
         self.frame = None
         self.ego_state_trigger = False
         self.mllm_message = None
+        self.if_yaw = False
+        self.waypoint = None
+        self.result = None
+        self.finish_mission = True
 
         # 创建图像保存目录
         self.image_save_dir = '/home/zhywwyzh/workspace/VLA_Diff/Openpi/test/infer/trail/saved_images'
@@ -151,22 +151,32 @@ class UAVPolicyNode(BasePolicyNode):
         except Exception as e:
             rospy.logerr(f"解析 command/content 失败: {e}")
 
+    # TODO 调整ego回调逻辑
     def ego_state_trigger_callback(self, msg: Bool):
         """处理ego_state_trigger回调"""
         self.ego_state_trigger = msg.data
         # rospy.loginfo(f"当前ego_state_trigger状态: {self.ego_state_trigger}")
-        self.val_state = VLA_STATE.PLAN
+        # self.val_state = VLA_STATE.PLAN
+        if self.finish_mission:
+            if self.if_yaw:
+                # rospy.loginfo("执行旋转")
+                # rospy.loginfo(f"waypoint:{self.waypoint}")
+                self.publish_action(self.waypoint, look_forward=False)
+                self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+                self.if_yaw = False
+                self.ego_state_trigger = False
+            else:
+                time.sleep(0.8)
+                self.vla_state = VLA_STATE.REPLY_MLLM
 
+    # TODO 修改提取方案
     def get_command_content(self):
         """从mllm消息中提取指令内容"""
         if self.mllm_message is not None:
-            try:
-                return self.mllm_message
-            except Exception as e:
-                rospy.logerr(f"解析指令内容失败: {e}")
-                return None
+            return self.mllm_message
         return None
 
+    # TODO 修改监听端口
     def listen_messages(self):
         """循环监听mllm新消息"""
         while not rospy.is_shutdown():
@@ -180,7 +190,7 @@ class UAVPolicyNode(BasePolicyNode):
                 rospy.logerr(f"消息监听出错: {e}")
             time.sleep(0.5)
 
-    def publish_action(self, action, look_forward=False, goal_to_follower=False):
+    def publish_action(self, action, look_forward=True, goal_to_follower=False):
         """发布动作到ROS话题"""
         if len(action) < 3:
             logging.error("动作数据不足3个元素")
@@ -211,27 +221,25 @@ class UAVPolicyNode(BasePolicyNode):
 
     def get_judgement(self, message):
         """判断是否包含 True 或 False"""
-        try:
-            text = message[0]['text']
-            has_true = "True" in text
-            has_false = "False" in text
-            if has_true and has_false:
-                print("无法判断结果，请重试")
-                return False
-            elif has_true:
-                return True
-            elif has_false:
-                return False
-            else:
-                print("未收到相关结果，请重试")
-                return False
-        except Exception as e:
-            rospy.logerr(f"提取判断结果失败: {e}")
-        return None
+        text = message[0]['text']
+        has_true = "True" in text
+        has_false = "False" in text
+        if has_true and has_false:
+            print("无法判断结果，请重试")
+            return False
+        elif has_true:
+            return True
+        elif has_false:
+            return False
+        else:
+            print("未收到相关结果，请重试")
+            return False
 
+    # TODO 推理逻辑初始化，初始与mllm的通信
     def run_inference(self):
         """执行推理"""
         rate = rospy.Rate(20)
+        replan_rate = rospy.Rate(2)
         waypoint = None
         self.vla_state = VLA_STATE.INIT
         self.last_plan_time = None
@@ -242,14 +250,12 @@ class UAVPolicyNode(BasePolicyNode):
                 self.command_content = self.get_command_content()
                 self.mllm_message.append(self.command_content)
                 break
+            time.sleep(0.5)
 
         def is_waypoint_cmd(c) -> bool:
             if isinstance(c, (list, tuple, np.ndarray)):
-                try:
-                    arr = np.array(c, dtype=float).reshape(-1)
-                    return arr.size >= 3 and np.all(np.isfinite(arr[:3]))
-                except Exception:
-                    return False
+                arr = np.array(c, dtype=float).reshape(-1)
+                return arr.size >= 3 and np.all(np.isfinite(arr[:3]))
             return False
 
         def is_label_cmd(c) -> bool:
@@ -260,6 +266,8 @@ class UAVPolicyNode(BasePolicyNode):
         while not rospy.is_shutdown():
             if self.command_type == COMMAND_TYPE.STOP:
                 self.vla_state = VLA_STATE.STOP
+
+            self.frame = self.get_frame_snapshot()
 
             match self.vla_state:
                 case VLA_STATE.INIT:
@@ -276,26 +284,30 @@ class UAVPolicyNode(BasePolicyNode):
                         rospy.loginfo("当前任务为空，请传入下一步任务")
                         time.sleep(1)
                         continue
-                    if self.command_type == COMMAND_TYPE.GO:
-                        self.vla_state = VLA_STATE.PLAN
-                    else:
-                        rate.sleep()
+                    # if self.command_type == COMMAND_TYPE.GO:
+                    #     self.vla_state = VLA_STATE.PLAN
+                    # else:
+                    #     rate.sleep()
 
+                case VLA_STATE.REPLY_MLLM:
+                    rospy.loginfo("到达目的地，基于MLLM回复")
+                    self.vla_state = VLA_STATE.WAIT
+                    response = self.publish_client.send_image(self.frame.rgb_image)
+                    rospy.loginfo(f"当前帧接收状态: {response['message']}")
+                    continue
+
+                # TODO 调整plan与replan
                 case VLA_STATE.PLAN:
                     try:
-                        if self.ego_state_trigger:
-                            if self.finish_mission:
-                                rospy.loginfo("到达目的地，规划下一步任务")
-                                self.vla_state = VLA_STATE.WAIT
-                                self.ego_state_trigger = False
-                                self.command_content.pop(0)
-                                continue
-
-                        self.frame = self.get_frame_snapshot()
                         if self.frame is None or getattr(self, 'depth_info', None) is None:
                             rospy.logwarn("传感器未准备好，重新初始化")
                             self.vla_state = VLA_STATE.INIT
                             continue
+
+                        if self.finish_mission:
+                            self.command_content.pop(0)
+                            self.finish_mission = False
+                            self.first_mission_frame = self.frame
 
                         cmd = self.command_content[0]
 
@@ -308,11 +320,13 @@ class UAVPolicyNode(BasePolicyNode):
                             if not self.first_plan:
                                 self.first_plan = True
                                 self.first_mission_frame = self.frame.rgb_image.copy()
+                                response = self.publish_client.send_image([self.first_mission_frame, self.frame.rgb_image], cmd, "uav_policy_node")
 
-                            # result, self.finish_mission = open_serve(self.first_mission_frame, self.frame.rgb_image, cmd)
-                            response = self.publish_client.send_image([self.first_mission_frame, self.frame.rgb_image], cmd, "uav_policy_node")
+                            # TODO 待修改vlm输出信息结构
+                            result, self.finish_mission = open_serve(self.first_mission_frame, self.frame.rgb_image, cmd)
                             rospy.loginfo(f"推理结果：{result}，是否达到目的地：{self.finish_mission}")
 
+                            # TODO 待修改mllm输入信息结构
                             waypoint, self.replan = self.pixel_to_world(result, self.frame)
                             rospy.loginfo(f"将前往{waypoint}")
                             self.vla_state = VLA_STATE.PUBLISH
@@ -328,24 +342,24 @@ class UAVPolicyNode(BasePolicyNode):
                         self.vla_state = VLA_STATE.ERROR
 
                 case VLA_STATE.PUBLISH:
-                    try:
-                        if waypoint is None:
-                            rospy.logwarn("没有有效的导航点，将重新规划")
-                            self.vla_state = VLA_STATE.PLAN
-                            continue
+                    if waypoint is None:
+                        rospy.logwarn("没有有效的导航点，将重新规划")
+                        self.vla_state = VLA_STATE.PLAN
+                        continue
 
-                        self.publish_action(waypoint)
-                        self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
-                        print(f"发布导航点: {waypoint}")
-                        self.last_state = np.array([waypoint[0], waypoint[1], waypoint[2], 0, 0, 0], dtype=np.float64)
-                        # time.sleep(0.5)  # 等待动作发布完成
-
-                    except Exception as e:
-                        logging.error(f"发布: {e}")
-                        self.vla_state = VLA_STATE.ERROR
-                
+                    self.publish_action(waypoint)
+                    self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+                    print(f"发布导航点: {waypoint}")
+                    self.last_state = np.array([waypoint[0], waypoint[1], waypoint[2], 0, 0, 0], dtype=np.float64)
+                    # time.sleep(0.5)  # 等待动作发布完成
+                    # self.vla_state = VLA_STATE.ERROR
+            
                 case VLA_STATE.WAIT_ACTION_FINISH:
-                    self.frame = self.get_frame_snapshot()
+                    if not self.finish_mission:
+                        self.vla_state = VLA_STATE.PLAN
+                        replan_rate.sleep()
+                        continue
+                    # self.frame = self.get_frame_snapshot()
                     time.sleep(0.1)
                     continue
 
@@ -366,14 +380,11 @@ class UAVPolicyNode(BasePolicyNode):
 
                 case VLA_STATE.GO_ORIGIN:
                     rospy.loginfo("收到 GO_ORIGIN 指令")
-                    waypoint1 = [13.75556939149453, 1.1951389392754197, 1.6000002883663185,
-                                 9.283559481815831e-09, -8.782741600475798e-10, 0.40138711153766954, 0.9159085034496877]
-                    self.publish_action(waypoint1)
-                    time.sleep(3)
-                    waypoint2 = [13.136453639674091, 0.5770826187959396, 1.5999999937387603,
-                                 6.791822847841003e-06, 2.862005646358964e-06, -0.9238737612250798, 0.3826973651143999]
-                    self.publish_action(waypoint2)
-                    self.vla_state = VLA_STATE.WAIT
+                    roll, pitch, yaw = self.quaternion_to_euler(6.791822847841003e-06, 2.862005646358964e-06, 0.9351266681836927, -0.3543135820874861)
+                    waypoint = [13.136453639674091, 0.5770826187959396, 1.5999999937387603,
+                                 roll, pitch, yaw]
+                    self.publish_action(waypoint, look_forward=False)
+                    self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
 
             rate.sleep()
 
@@ -382,26 +393,18 @@ def main():
     logging.basicConfig(level=logging.INFO)
     rospy.init_node('uav_policy_node', anonymous=True)
 
-    try:
-        print("Program starting...")
-        node = UAVPolicyNode()
-        # 在单独的线程中运行推理循环
-        inference_thread = threading.Thread(target=node.run_inference)
-        inference_thread.start()
+    print("Program starting...")
+    node = UAVPolicyNode()
+    # 在单独的线程中运行推理循环
+    inference_thread = threading.Thread(target=node.run_inference)
+    inference_thread.start()
 
-        # 主线程运行 ROS1 spin
-        rospy.spin()
+    # 主线程运行 ROS1 spin
+    rospy.spin()
 
-        # 等待推理线程结束
-        inference_thread.join()
+    # 等待推理线程结束
+    inference_thread.join()
 
-    except KeyboardInterrupt:
-        pass
-    except Exception as e:
-        logging.error(f"主程序错误: {e}")
-    finally:
-        # ROS1 无需 destroy_node；若有清理逻辑可在此添加
-        pass
 
 
 if __name__ == "__main__":
