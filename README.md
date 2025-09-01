@@ -13,6 +13,7 @@ We use [uv](https://docs.astral.sh/uv/) to manage Python dependencies. See the [
 ```bash
 GIT_LFS_SKIP_SMUDGE=1 uv sync
 GIT_LFS_SKIP_SMUDGE=1 uv pip install -e .
+uv pip install ../pipeline -r requirements.txt
 ```
 
 NOTE: `GIT_LFS_SKIP_SMUDGE=1` is needed to pull LeRobot as a dependency.
@@ -133,7 +134,13 @@ source .venv/bin/activate # Only needed if you are not in the environment of ope
 python test_simulation.py
 ```
 
-### 6. Run goal-utils and cloud_filter
+## Set Up Simulation Environment mllm-fsm-vlm
+若为ubuntu22.04，请使用docker运行步骤1-2，推荐使用鱼香ros自动安装ros1-docker
+```bash
+wget http://fishros.com/install -O fishros && . fishros
+```
+
+### 1. Run cloud_filter
 ```bash
 cd VLA/simulation/EGO-Planner-v3
 catkin_make
@@ -141,7 +148,7 @@ source devel/setup.bash
 roslaunch cloud_filter filter.launch
 ```
 
-### 7. Run EGO-Planner-v3
+### 2. Run EGO-Planner-v3
 
 ```bash
 cd VLA/simulation/EGO-Planner-v3
@@ -151,12 +158,42 @@ roslaunch mission_fsm multidrone_sim.launch
 roslaunch mission_fsm rviz.launch
 ```
 
-### 8. Run vllm
+### 3. change ROS
+ROS1
 ```bash
-vllm serve /home/zhywwyzh/Modelscope/qwen2.5-vl-7B-Instruct-AWQ --dtype auto --port 6006 --max-model-len 3000 --gpu-memory-utilization 0.8
+bash test_main/scripts/change_ros/ros1.sh
+```
+ROS2
+```bash
+bash test_main/scripts/change_ros/ros2.sh
 ```
 
-### 9. Run test in simulation-ros2
+### 3. Setup ROS-Unity Bridge
+
 ```bash
-cd Openpi
-source .
+cd VLA_Diff/simulation/ROS-Unity_bridge
+catkin_make    # Only needed if you haven't built before
+source devel/setup.zsh
+roslaunch ros_tcp_endpoint endpoint.launch
+```
+
+### 4. Run vllm
+建议创建一个新环境，并从modelscope或huggingface自行拉取模型
+```bash
+pip install vllm, transformers
+vllm serve /path/to/your/file/qwen2.5-vl-7B-Instruct-AWQ --dtype auto --port 6006 --max-model-len 3000 --gpu-memory-utilization 0.8
+```
+### 5. Run test
+mllm-fsm-vlm
+```bash
+source Openpi/.venv/bin/activate
+source simulation/EGO-Planner-v3/devel/setup.bash
+python test_main/test_simulation.py
+```
+
+mllm-fsm
+```bash
+source Openpi/.venv/bin/activate
+source simulation/EGO-Planner-v3/devel/setup.bash
+python test_main/test_simulation_mllm.py
+```
