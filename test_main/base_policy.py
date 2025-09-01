@@ -16,6 +16,7 @@ import pdb
 from sensor_msgs.msg import PointCloud2, PointField
 import sensor_msgs.point_cloud2 as pc2
 from visualization_msgs.msg import Marker
+import math
 
 
 
@@ -264,10 +265,16 @@ class BasePolicyNode(object):
             raise ValueError("相机参数未就绪")
 
         replan = False
+        roll, pitch, yaw = map(float, frame.current_state[3:6].tolist())
+        yaw = yaw - results.get("yaw", 0.0) / 180.0 * math.pi
+        if results["pos"] == [-1, -1]:
+            P_w = [frame.current_state[0], frame.current_state[1], frame.current_state[2]]
+            P_w_full = np.concatenate([P_w, np.array([roll, pitch, yaw], dtype=np.float64)])
+            replan = False
+            return P_w_full, replan
 
         # ---------- 0) 读入像素与相机参数 ----------
         u, v = float(results["pos"][0]), float(results["pos"][1])
-        delta_yaw = float(results.get("yaw", 0.0))
         fx, fy, cx, cy = (self.depth_info['fx'], self.depth_info['fy'],
                           self.depth_info['cx'], self.depth_info['cy'])
 
@@ -297,7 +304,7 @@ class BasePolicyNode(object):
             replan = True
             depth_raw = 30.0
 
-        depth_val = depth_raw * depth_scale
+        depth_val = (depth_raw-2.0) * depth_scale
         if not np.isfinite(depth_val) or depth_val <= 0:
             raise ValueError(f"无效深度 depth={depth_val}")
 
@@ -322,22 +329,22 @@ class BasePolicyNode(object):
 
         # ---------- 4) 相机机体系→世界系（使用深度相机世界位姿） ----------
         tx_c, ty_c, tz_c, roll_c, pitch_c, yaw_c = map(float, frame.current_depth_state.tolist())
-        roll, pitch, yaw = map(float, frame.current_depth_state[3:6].tolist())
+
         R_w_cam = self.euler_rpy_to_R(roll_c, pitch_c, yaw_c)
         t_wc = np.array([tx_c, ty_c, tz_c], dtype=np.float64)
 
-        # ---------- 5) 安全距离 ----------
-        dist_cam = float(np.linalg.norm(P_cam))
-        if np.isfinite(dist_cam) and dist_cam < self.safe_dis:
-            rospy.loginfo(f"相机距离安全边界: {dist_cam:.2f}")
-            if dist_cam > 1e-6:
-                P_cam_safe = P_cam * (self.safe_dis / dist_cam)
-            else:
-                # 万一刚好在相机中心，给一个前方安全半径的默认方向
-                P_cam_safe = np.array([self.safe_dis, 0.0, 0.0], dtype=np.float64)
-            replan = True or replan
-        else:
-            P_cam_safe = P_cam
+        # # ---------- 5) 安全距离 ----------
+        # dist_cam = float(np.linalg.norm(P_cam))
+        # # if np.isfinite(dist_cam) and dist_cam < self.safe_dis:
+        # rospy.loginfo(f"相机距离安全边界: {dist_cam:.2f}")
+        # if dist_cam > 1e-6:
+        #     P_cam_safe = P_cam * (self.safe_dis / dist_cam)
+        # else:
+        #     # 万一刚好在相机中心，给一个前方安全半径的默认方向
+        #     P_cam_safe = np.array([self.safe_dis, 0.0, 0.0], dtype=np.float64)
+        # replan = True or replan
+        # else:
+        #     P_cam_safe = P_cam
 
         # ---------- 6) 到世界系 ----------
         # P_w = R_w_cam @ P_cam_safe + t_wc
