@@ -29,7 +29,6 @@ def open_serve(img_ori, img_cur, input):
     finish_mission = False
     # input = "door"
     # 将图像编码为base64
-    img_ori = cv2.imread('/home/zhywwyzh/workspace/test_vlm/office_img/rgb_image_office.jpg')
     _, buffer_ori = cv2.imencode('.jpg', img_ori)
     img_ori_base64 = base64.b64encode(buffer_ori).decode('utf-8')
     data_url_ori = f'data:image/jpeg;base64,{img_ori_base64}'

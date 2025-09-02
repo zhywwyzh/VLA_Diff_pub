@@ -74,12 +74,15 @@ class UAVPolicyNode(BasePolicyNode):
         self.result = None
         self.finish_mission = True
 
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        parent_dir = os.path.dirname(current_dir)
+
         # 创建图像保存目录
-        self.image_save_dir = '/home/zhywwyzh/workspace/VLA_Diff/Openpi/test/infer/trail/saved_images'
+        self.image_save_dir = os.path.join(parent_dir, 'Openpi/test/infer/trail/saved_images')
         os.makedirs(self.image_save_dir, exist_ok=True)
 
         # 创建模型输入图像保存目录
-        self.model_input_dir = '/home/zhywwyzh/workspace/VLA_Diff/Openpi/test/infer/trail/model_input_images'
+        self.model_input_dir = os.path.join(parent_dir, 'Openpi/test/infer/trail/model_input_images')
         os.makedirs(self.model_input_dir, exist_ok=True)
 
         # 订阅指令需求
@@ -117,7 +120,7 @@ class UAVPolicyNode(BasePolicyNode):
         self.original_trajectory = []
         self.inferred_trajectory = []
 
-        self.tasks_jsonl_path = "/home/zhywwyzh/workspace/VLA_Diff/Openpi/test/infer/test_data/meta/tasks.jsonl"
+        self.tasks_jsonl_path = os.path.join(parent_dir, 'Openpi/test/infer/test_data/meta/tasks.jsonl')
         self.task_index = 2
 
         # 从参数服务器获取配置（ROS1）
@@ -323,7 +326,7 @@ class UAVPolicyNode(BasePolicyNode):
                                 response = self.publish_client.send_image([self.first_mission_frame, self.frame.rgb_image], cmd, "uav_policy_node")
 
                             # TODO 待修改vlm输出信息结构
-                            result, self.finish_mission = open_serve(self.first_mission_frame, self.frame.rgb_image, cmd)
+                            result, self.finish_mission = open_serve(self.first_mission_frame.rgb_image, self.frame.rgb_image, cmd)
                             rospy.loginfo(f"推理结果：{result}，是否达到目的地：{self.finish_mission}")
 
                             # TODO 待修改mllm输入信息结构
