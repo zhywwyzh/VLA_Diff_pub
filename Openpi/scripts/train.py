@@ -220,6 +220,7 @@ def main(config: _config.TrainConfig):
         sharding=data_sharding,
         num_workers=config.num_workers,
         shuffle=True,
+        skip_norm_stats=True,  # Skip normalization stats for 1ep dataset
     )
     data_iter = iter(data_loader)
     batch = next(data_iter)

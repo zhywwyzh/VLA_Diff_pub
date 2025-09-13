@@ -4,7 +4,7 @@ import os
 def upload_dataset_to_modelscope():
     # 1. Replace with your ModelScope SDK Access Token
     # You can get your token from: https://modelscope.cn/my/myaccesstoken
-    your_access_token = '7a98f476-9ce6-4deb-951d-099ea11c4edb' # Example token, replace if necessary
+    your_access_token = 'ms-b960e76f-927e-4cf4-806d-79681fddb3b6' # Example token, replace if necessary
 
     # 2. Initialize HubApi and login
     api = HubApi()
@@ -16,9 +16,9 @@ def upload_dataset_to_modelscope():
         return
 
     # 3. Define your repository and local folder details
-    repo_id = 'LXX3123/UAV-FLOW-lerobot-pass'
+    repo_id = 'LXX3123/uav_flow_raw_shuffled'
 
-    local_dataset_folder = '/home/adminroot/lxx/dataset/uav_flow_lerobot_format/fixed_command/pass/train/uav_flow' # IMPORTANT: Update this path
+    local_dataset_folder = '/data/vla/uav_flow_raw_shuffled' # IMPORTANT: Update this path
     
     if not os.path.isdir(local_dataset_folder):
         print(f"Error: The specified local_dataset_folder does not exist or is not a directory: {local_dataset_folder}")
