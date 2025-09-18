@@ -14,7 +14,7 @@ os.environ.pop("https_proxy", None)
 os.environ.pop("all_proxy", None)
 
 # 初始化客户端
-client = OpenAI(api_key='EMPTY', base_url='http://127.0.0.1:6006/v1')
+client = OpenAI(api_key='EMPTY', base_url='http://127.0.0.1:8000/v1')
 
 def open_serve(img_ori, img_cur, input):
     """
@@ -45,34 +45,6 @@ def open_serve(img_ori, img_cur, input):
         model=model_name,
         messages=[
             {
-                'role':'user',
-                'content':[{
-                    'type': 'text',
-                    'text': USER1
-                }]
-            },
-            {
-                'role':'assistant',
-                'content':[{
-                    'type': 'text',
-                    'text': ASSISTANT1
-                }]
-            },
-            {
-                'role':'user',
-                'content':[{
-                    'type': 'text',
-                    'text': USER2
-                }]
-            },
-            {
-                'role':'assistant',
-                'content':[{
-                    'type': 'text',
-                    'text': ASSISTANT2
-                }]
-            },
-            {
                 'role': 'user',
                 'content': [{
                     'type': 'text',
@@ -99,18 +71,14 @@ def open_serve(img_ori, img_cur, input):
     content = response.choices[0].message.content
     print(f"模型返回内容: {content}")
 
-    coord_match = re.search(r"\(([\d\s,]+)\)", content)
-    if coord_match:
-        coord_str = coord_match.group(1)
-        loc_in_rgb = [int(x.strip()) for x in coord_str.split(',')]
-    else:
-        loc_in_rgb = None
+    data = json.loads(content)
+    result = {
+        "pos": data.get("pos", [-1, -1]),
+        "yaw": data.get("yaw", 0.0),
+    }
 
-    bool_match = re.search(r"(True|False)", content)
-    if bool_match:
-        finish_mission = bool_match.group(1) == "True"
-    else:
-        finish_mission = None
+    finish_mission = data.get("finish_mission", False)
+
 
     # 去掉 ```json ... ``` 包裹
     # json_str = re.sub(r"^```json\s*|\s*```$", "", content.strip(), flags=re.DOTALL)
@@ -118,15 +86,15 @@ def open_serve(img_ori, img_cur, input):
     # 转成 Python 对象
     try:
         # return json.loads(json_str)
-        return loc_in_rgb, finish_mission
+        return result, finish_mission
     except json.JSONDecodeError:
         raise ValueError(f"模型返回的JSON解析失败: {content}")
 
-# 使用示例
-if __name__ == "__main__":
-    img_path = '/home/zhywwyzh/workspace/test_vlm/test_img/rgb.jpg'
-    img = cv2.imread(img_path)
-    result = open_serve(img)
-    print(result)
+# # 使用示例
+# if __name__ == "__main__":
+#     img_path = '/home/zhywwyzh/workspace/test_vlm/test_img/rgb.jpg'
+#     img = cv2.imread(img_path)
+#     result = open_serve(img)
+#     print(result)
 
-# vllm serve /home/zhywwyzh/Modelscope/qwen2.5-vl-7B-Instruct-AWQ --dtype auto --port 6006 --max-model-len 3000 --gpu-memory-utilization 0.8
+# vllm serve /home/zhywwyzh/workspace/LLaMA-Factory/output/qwen2.5-vl-sft-awq --dtype auto --port 8000 --max-model-len 4096 --gpu-memory-utilization 0.8
