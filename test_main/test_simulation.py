@@ -29,7 +29,8 @@ from utils.vlm.openai_serve import open_serve
 from utils.param import COMMAND_TYPE, VLA_STATE
 
 from base_policy import BasePolicyNode  # 假定已有 ROS1 版本或与 ROS 无关的 Base
-from utils.server.publish_client import MessageClient
+# from utils.server.publish_client import MessageClient
+from utils.server.publish_client_ori import MessageClient
 from utils.server.receive_client import GeminiMessageClient
 
 
@@ -41,38 +42,27 @@ class UAVPolicyNode(BasePolicyNode):
         self.bridge = CvBridge()
 
         # 存储最新的状态和图像
-        self.current_image = None
-        self.current_wrist_image = None
         self.first_image = None
-        self.first_image_received = False
-        self.count = 0
-        self.save_count = 0
-        self.image_save_count = 0
         self.last_state = [0, 0, 1, 0, 0, 0]
         self.last_plan_time = None
         self.inference_timeout = 5.0
-        self.save = None
-        self.plan = True
         self.last_command = None
         self.first_mission_frame = None
-        self.first_plan = False
-        self.command_content = ['start_mission']
+        self.command_content = []
         self.replan = False
         self.task_id = [1, 2, 2, 1]
         self.command_type = COMMAND_TYPE.WAIT
         self.task_id_mllm = []
         self.task_id_vlm = []
-        self.pub_goal = False
-        self.arrival_distance = 0.1
-        self.time_out = 10.0
         self.vla_state = None
         self.frame = None
         self.ego_state_trigger = False
         self.mllm_message = None
         self.if_yaw = False
-        self.waypoint = None
         self.result = None
-        self.finish_mission = True
+        self.waypoint = None
+        self.finish_mission = False
+        self.first_plan = False
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.dirname(current_dir)
@@ -149,28 +139,36 @@ class UAVPolicyNode(BasePolicyNode):
 
     def command_content_callback(self, msg: String):
         """处理指令内容回调"""
-        try:
-            self.command_content.append(json.loads(msg.data))
-        except Exception as e:
-            rospy.logerr(f"解析 command/content 失败: {e}")
+        # 原封不动保存整段文本
+        self.command_content.append(msg.data)
+        self.vla_state = VLA_STATE.PLAN
+        # rospy.loginfo(f"✅ 收到完整 content 消息: {msg.data}")
 
     # TODO 调整ego回调逻辑
     def ego_state_trigger_callback(self, msg: Bool):
         """处理ego_state_trigger回调"""
         self.ego_state_trigger = msg.data
-        # rospy.loginfo(f"当前ego_state_trigger状态: {self.ego_state_trigger}")
-        # self.val_state = VLA_STATE.PLAN
-        if self.finish_mission:
-            if self.if_yaw:
-                # rospy.loginfo("执行旋转")
-                # rospy.loginfo(f"waypoint:{self.waypoint}")
+        if self.waypoint is not None:
+            if self.result["yaw"] > 1e-3:
                 self.publish_action(self.waypoint, look_forward=False)
                 self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
-                self.if_yaw = False
-                self.ego_state_trigger = False
-            else:
                 time.sleep(0.8)
-                self.vla_state = VLA_STATE.REPLY_MLLM
+        # time.sleep(0.8)
+        self.vla_state = VLA_STATE.REPLY_MLLM
+        # rospy.loginfo(f"当前ego_state_trigger状态: {self.ego_state_trigger}")
+        # self.val_state = VLA_STATE.PLAN
+        # if self.finish_mission:
+        #     if self.if_yaw:
+        #         # rospy.loginfo("执行旋转")
+        #         # rospy.loginfo(f"waypoint:{self.waypoint}")
+        #         self.publish_action(self.waypoint, look_forward=False)
+        #         self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+        #         self.if_yaw = False
+        #         self.ego_state_trigger = False
+        #     else:
+        #         time.sleep(0.8)
+        #         self.vla_state = VLA_STATE.REPLY_MLLM
+
 
     # TODO 修改提取方案
     def get_command_content(self):
@@ -195,9 +193,9 @@ class UAVPolicyNode(BasePolicyNode):
 
     def publish_action(self, action, look_forward=True, goal_to_follower=False):
         """发布动作到ROS话题"""
-        if len(action) < 3:
-            logging.error("动作数据不足3个元素")
-            return
+        # if len(action) < 3:
+        #     logging.error("动作数据不足3个元素")
+        #     return
 
         pose_msg = GoalSet()
         pose_msg.to_drone_ids = [0]
@@ -213,15 +211,15 @@ class UAVPolicyNode(BasePolicyNode):
         if len(action) == 3:
             roll, pitch, yaw = self.quaternion_to_euler(0.0, 0.0, 0.0, 1.0)
         else:
-            roll, pitch, yaw = self.quaternion_to_euler(float(action[3]), float(action[4]), float(action[5]), float(action[6]))
+            roll, pitch, yaw = float(action[3]), float(action[4]), float(action[5])
         pose_msg.yaw = [yaw]
 
+        print(f"yaw: {yaw}")
         # 设置如何飞行
         pose_msg.look_forward = look_forward
         pose_msg.goal_to_follower = goal_to_follower
 
         self.action_pub.publish(pose_msg)
-
     def get_judgement(self, message):
         """判断是否包含 True 或 False"""
         text = message[0]['text']
@@ -246,14 +244,22 @@ class UAVPolicyNode(BasePolicyNode):
         waypoint = None
         self.vla_state = VLA_STATE.INIT
         self.last_plan_time = None
+        rospy.loginfo("等待传感器准备...")
 
-        while not rospy.is_shutdown():
-            if self.mllm_message is not None:
-                self.get_logger().info(f"收到任务信息: {self.mllm_message}")
-                self.command_content = self.get_command_content()
-                self.mllm_message.append(self.command_content)
-                break
-            time.sleep(0.5)
+        while self.get_frame_snapshot() is None:
+            time.sleep(1)
+
+        self.first_image = self.frame.rgb_image
+        response = self.publish_client.send_image(self.first_image)
+        rospy.loginfo(f"发送第一张图片: {response}")
+
+        # while not rospy.is_shutdown():
+        #     if self.mllm_message is not None:
+        #         self.get_logger().info(f"收到任务信息: {self.mllm_message}")
+        #         self.command_content = self.get_command_content()
+        #         self.mllm_message.append(self.command_content)
+        #         break
+        #     time.sleep(0.5)
 
         def is_waypoint_cmd(c) -> bool:
             if isinstance(c, (list, tuple, np.ndarray)):
@@ -323,15 +329,29 @@ class UAVPolicyNode(BasePolicyNode):
                             if not self.first_plan:
                                 self.first_plan = True
                                 self.first_mission_frame = self.frame.rgb_image.copy()
-                                response = self.publish_client.send_image([self.first_mission_frame, self.frame.rgb_image], cmd, "uav_policy_node")
-
+                                # response = self.publish_client.send_image([self.first_mission_frame, self.frame.rgb_image], cmd, "uav_policy_node")
+                            # rospy.loginfo(f"当前帧接收状态: {response['message']}")
                             # TODO 待修改vlm输出信息结构
-                            result, self.finish_mission = open_serve(self.first_mission_frame.rgb_image, self.frame.rgb_image, cmd)
-                            rospy.loginfo(f"推理结果：{result}，是否达到目的地：{self.finish_mission}")
+                            self.result, self.finish_mission = open_serve(self.first_mission_frame, self.frame.rgb_image, cmd)
+                            # result, self.finish_mission = open_serve()
+                            # rospy.loginfo(f"推理结果：{result}，是否达到目的地：{self.finish_mission}")
 
                             # TODO 待修改mllm输入信息结构
-                            waypoint, self.replan = self.pixel_to_world(result, self.frame)
-                            rospy.loginfo(f"将前往{waypoint}")
+                            # waypoint, self.replan = self.pixel_to_world(result, self.frame)
+                            pos_offset = np.array(self.result["pos"], dtype=np.float64)
+                            xyz = self.frame.current_state[:3] + pos_offset
+                            waypoint = np.array([
+                                xyz[0],
+                                xyz[1],
+                                xyz[2],
+                                0.0,
+                                0.0,
+                                self.result["yaw"]
+                            ], dtype=np.float64)
+
+                            self.waypoint = waypoint
+
+                            # rospy.loginfo(f"将前往{waypoint}")
                             self.vla_state = VLA_STATE.PUBLISH
 
                         else:
@@ -352,16 +372,17 @@ class UAVPolicyNode(BasePolicyNode):
 
                     self.publish_action(waypoint)
                     self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
-                    print(f"发布导航点: {waypoint}")
+                    print(f"当前位于: {self.frame.current_state}")
+                    print(f"发布导航点: {waypoint}\n\n")
                     self.last_state = np.array([waypoint[0], waypoint[1], waypoint[2], 0, 0, 0], dtype=np.float64)
                     # time.sleep(0.5)  # 等待动作发布完成
                     # self.vla_state = VLA_STATE.ERROR
             
                 case VLA_STATE.WAIT_ACTION_FINISH:
-                    if not self.finish_mission:
-                        self.vla_state = VLA_STATE.PLAN
-                        replan_rate.sleep()
-                        continue
+                    # if not self.finish_mission:
+                    #     self.vla_state = VLA_STATE.PLAN
+                    #     replan_rate.sleep()
+                    #     continue
                     # self.frame = self.get_frame_snapshot()
                     time.sleep(0.1)
                     continue
@@ -383,8 +404,8 @@ class UAVPolicyNode(BasePolicyNode):
 
                 case VLA_STATE.GO_ORIGIN:
                     rospy.loginfo("收到 GO_ORIGIN 指令")
-                    roll, pitch, yaw = self.quaternion_to_euler(6.791822847841003e-06, 2.862005646358964e-06, 0.9351266681836927, -0.3543135820874861)
-                    waypoint = [13.136453639674091, 0.5770826187959396, 1.5999999937387603,
+                    roll, pitch, yaw = self.quaternion_to_euler(6.79e-06, 2.86e-06, 0.935, -0.35)
+                    waypoint = [13.14, 0.58, 1.6,
                                  roll, pitch, yaw]
                     self.publish_action(waypoint, look_forward=False)
                     self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
