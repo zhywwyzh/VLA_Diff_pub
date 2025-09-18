@@ -58,7 +58,7 @@
         <param name="grid_map/local_update_range_y" value="8.0" />
         <param name="grid_map/local_update_range_z" value="4.0" />
         <!-- <param name="grid_map/obstacles_inflation" value="0.5" /> -->
-        <param name="grid_map/obstacles_inflation" value="0.4" />
+        <param name="grid_map/obstacles_inflation" value="0.2" />
 
         <param name="grid_map/local_map_margin" value="10"/>
         <param name="grid_map/enable_virtual_wall" value="true"/>
