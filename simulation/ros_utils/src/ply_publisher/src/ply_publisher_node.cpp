@@ -13,6 +13,9 @@
 
 #include <Eigen/Geometry>
 #include <limits>
+#include <array>
+#include <vector>
+#include <cmath>
 
 #include "ply_publisher/pc_processor.h"
 #include "ply_publisher/sensor_manager.h"
@@ -27,15 +30,22 @@ static inline uint8_t meterToByte(float z_m, float depth_max) {
     return static_cast<uint8_t>(std::round(x * 255.f));
 }
 
+static inline Eigen::Matrix3f Rz(float yaw_rad) {
+    const float c = std::cos(yaw_rad), s = std::sin(yaw_rad);
+    Eigen::Matrix3f R;
+    R << c,-s, 0,
+         s, c, 0,
+         0, 0, 1;
+    return R;
+}
+
 int main(int argc, char** argv) {
     ros::init(argc, argv, "ply_publisher_node");
     ros::NodeHandle nh("~");
 
-    // I/O topics
+    // I/O topics (点云、相机信息依旧；深度仅压缩版按 /camera{1..4} 固定发布)
     std::string ply_file;            nh.param<std::string>("ply_file", ply_file, "test.ply");
     std::string point_topic;         nh.param<std::string>("topic_name", point_topic, "/ply_points");
-    std::string depth_topic;         nh.param<std::string>("depth_topic", depth_topic, "/camera1/depth/image");
-    std::string depth_comp_topic;    nh.param<std::string>("depth_compressed_topic", depth_comp_topic, "/camera1/depth/image/compressed");
     std::string caminfo_topic;       nh.param<std::string>("camera_info_topic", caminfo_topic, "/camera1/camera_info");
 
     // rates
@@ -67,9 +77,9 @@ int main(int argc, char** argv) {
 
     // Unity transform
     std::vector<double> unity_pos_v, unity_rot_v, unity_scale_v;
-    nh.param<std::vector<double>>("unity_pos", unity_pos_v, std::vector<double>{0, 0, 0});
-    nh.param<std::vector<double>>("unity_rot_deg", unity_rot_v, std::vector<double>{0, 0, 0});
-    nh.param<std::vector<double>>("unity_scale", unity_scale_v, std::vector<double>{1, 1, 1});
+    nh.param<std::vector<double>>("unity_pos",       unity_pos_v,  std::vector<double>{0, 0, 0});
+    nh.param<std::vector<double>>("unity_rot_deg",   unity_rot_v,  std::vector<double>{0, 0, 0});
+    nh.param<std::vector<double>>("unity_scale",     unity_scale_v,std::vector<double>{1, 1, 1});
 
     PCProcessor pcproc;
     pcproc.setDownsampleEnabled(enable_down);
@@ -93,9 +103,15 @@ int main(int argc, char** argv) {
 
     // Publishers
     ros::Publisher pc_pub      = nh.advertise<sensor_msgs::PointCloud2>(point_topic, 1, true);
-    ros::Publisher depth_pub   = nh.advertise<sensor_msgs::Image>(depth_topic, 1, true);
-    ros::Publisher depthc_pub  = nh.advertise<sensor_msgs::CompressedImage>(depth_comp_topic, 1, true);
     ros::Publisher caminfo_pub = nh.advertise<sensor_msgs::CameraInfo>(caminfo_topic, 1, true);
+
+    // 四个方向的压缩深度图发布器（固定话题名）
+    std::array<ros::Publisher,4> depthc_pubs = {
+        nh.advertise<sensor_msgs::CompressedImage>("/camera1/depth/image/compressed", 1),
+        nh.advertise<sensor_msgs::CompressedImage>("/camera2/depth/image/compressed", 1),
+        nh.advertise<sensor_msgs::CompressedImage>("/camera3/depth/image/compressed", 1),
+        nh.advertise<sensor_msgs::CompressedImage>("/camera4/depth/image/compressed", 1)
+    };
 
     // 点云消息
     sensor_msgs::PointCloud2 pc2_msg;
@@ -140,6 +156,10 @@ int main(int argc, char** argv) {
          0.f,  0.f, -1.f,
          1.f,  0.f,  0.f).finished();
 
+    // 四个方向的附加机体系偏航角：前(1)=0, 后(2)=π, 左(3)=+π/2, 右(4)=−π/2
+    const std::array<float,4> yaw_offsets = {0.f, static_cast<float>(M_PI),
+                                             static_cast<float>(M_PI_2), static_cast<float>(-M_PI_2)};
+
     while (ros::ok()) {
         ros::spinOnce();
 
@@ -157,27 +177,23 @@ int main(int argc, char** argv) {
                 last_point_pub = ros::Time::now();
             }
 
-            // CameraInfo
+            // CameraInfo（发一次即可）
             cam_info.header.stamp = stamp;
             cam_info.header.frame_id = frame;
             caminfo_pub.publish(cam_info);
 
             // 位姿（T^world_body）
-            Eigen::Vector3f t_wb(odom.pose.pose.position.x,
-                                 odom.pose.pose.position.y,
-                                 odom.pose.pose.position.z);
-            Eigen::Quaternionf q_wb(odom.pose.pose.orientation.w,
-                                    odom.pose.pose.orientation.x,
-                                    odom.pose.pose.orientation.y,
-                                    odom.pose.pose.orientation.z);
-            Eigen::Matrix3f R_wb = q_wb.toRotationMatrix(); // body->world
-            Eigen::Matrix3f R_bw = R_wb.transpose();        // world->body
+            const Eigen::Vector3f t_wb(odom.pose.pose.position.x,
+                                       odom.pose.pose.position.y,
+                                       odom.pose.pose.position.z);
+            const Eigen::Quaternionf q_wb(odom.pose.pose.orientation.w,
+                                          odom.pose.pose.orientation.x,
+                                          odom.pose.pose.orientation.y,
+                                          odom.pose.pose.orientation.z);
+            const Eigen::Matrix3f R_wb = q_wb.toRotationMatrix(); // body->world
+            const Eigen::Matrix3f R_bw = R_wb.transpose();        // world->body
 
-            // 正确的组合：world->optical 与 optical->world
-            Eigen::Matrix3f R_ow = use_optical_convention ? (R_bo * R_bw) : R_bw; // world->optical
-            Eigen::Matrix3f R_wo = R_ow.transpose();                               // optical->world
-
-            // 可选 CropBox（用光学朝向）
+            // 可选 CropBox（统一用“前向光学系”朝向估算裁剪盒姿态，避免每个方向单独裁剪带来的不一致）
             pcl::PointCloud<PointT>::ConstPtr cloud_to_render = full_cloud;
             pcl::PointCloud<PointT>::Ptr cropped(new pcl::PointCloud<PointT>);
             if (use_cropbox) {
@@ -188,8 +204,10 @@ int main(int argc, char** argv) {
                 crop.setMin(Eigen::Vector4f(-x_lim_max, -y_lim_max, static_cast<float>(depth_min), 1.0f));
                 crop.setMax(Eigen::Vector4f( x_lim_max,  y_lim_max, depth_max, 1.0f));
 
-                // 用 optical->world 姿态设置裁剪盒方向
-                Eigen::Vector3f rpy_wo = R_wo.eulerAngles(0,1,2);
+                // 用“前向” optical->world 姿态设置裁剪盒方向
+                const Eigen::Matrix3f R_ow_front = use_optical_convention ? (R_bo * R_bw) : R_bw;
+                const Eigen::Matrix3f R_wo_front = R_ow_front.transpose();
+                Eigen::Vector3f rpy_wo = R_wo_front.eulerAngles(0,1,2);
                 crop.setRotation(Eigen::Vector3f(rpy_wo[0], rpy_wo[1], rpy_wo[2]));
                 crop.setTranslation(t_wb);
 
@@ -198,74 +216,82 @@ int main(int argc, char** argv) {
                 cloud_to_render = cropped;
             }
 
-            // 栅格化渲染（像素溅射）
-            std::fill(depth_buf.begin(), depth_buf.end(), std::numeric_limits<float>::infinity());
+            // 渲染四个方向并压缩发布
             const int stride = std::max(1, render_stride);
             const int r = std::max(0, splat_radius_px);
 
-            for (size_t i = 0; i < cloud_to_render->points.size(); i += (size_t)stride) {
-                const auto& pt = cloud_to_render->points[i];
-                Eigen::Vector3f p_cam = R_ow * (Eigen::Vector3f(pt.x, pt.y, pt.z) - t_wb); // world->optical
-                const float Z = p_cam.z();
-                if (Z <= static_cast<float>(depth_min) || Z > depth_max) continue;
-
-                if (frustum_culling) {
-                    const float X = p_cam.x(), Y = p_cam.y();
-                    const float x_lim = static_cast<float>(std::tan(half_h) * Z);
-                    if (X < -x_lim || X > x_lim) continue;
-                    const float y_lim = static_cast<float>(std::tan(half_v) * Z);
-                    if (Y < -y_lim || Y > y_lim) continue;
+            for (size_t k = 0; k < yaw_offsets.size(); ++k) {
+                // world->optical_k = (R_bo * Rz(ψ_k)) * R_bw
+                Eigen::Matrix3f R_ow;
+                if (use_optical_convention) {
+                    R_ow = (R_bo * Rz(yaw_offsets[k]) * R_bw);
+                } else {
+                    R_ow = (Rz(yaw_offsets[k]) * R_bw);
                 }
 
-                const float uf = static_cast<float>((fx * p_cam.x() / Z) + cx);
-                const float vf = static_cast<float>((fy * p_cam.y() / Z) + cy);
-                int u0 = static_cast<int>(std::round(uf));
-                int v0 = static_cast<int>(std::round(vf));
-                if ((unsigned)u0 >= (unsigned)W || (unsigned)v0 >= (unsigned)H) continue;
+                // 栅格化渲染
+                std::fill(depth_buf.begin(), depth_buf.end(), std::numeric_limits<float>::infinity());
 
-                // 溅射：更新 (u0,v0) 周围 (2r+1)^2 的最小深度
-                int umin = std::max(0, u0 - r), umax = std::min(W - 1, u0 + r);
-                int vmin = std::max(0, v0 - r), vmax = std::min(H - 1, v0 + r);
-                for (int v = vmin; v <= vmax; ++v) {
-                    int base = v * W;
-                    for (int u = umin; u <= umax; ++u) {
-                        int idx = base + u;
-                        if (Z < depth_buf[idx]) depth_buf[idx] = Z;
+                for (size_t i = 0; i < cloud_to_render->points.size(); i += (size_t)stride) {
+                    const auto& pt = cloud_to_render->points[i];
+                    const Eigen::Vector3f pw(pt.x, pt.y, pt.z);
+                    const Eigen::Vector3f p_cam = R_ow * (pw - t_wb); // world->optical_k
+
+                    const float Z = p_cam.z();
+                    if (Z <= static_cast<float>(depth_min) || Z > depth_max) continue;
+
+                    if (frustum_culling) {
+                        const float X = p_cam.x(), Y = p_cam.y();
+                        const float x_lim = static_cast<float>(std::tan(half_h) * Z);
+                        if (X < -x_lim || X > x_lim) continue;
+                        const float y_lim = static_cast<float>(std::tan(half_v) * Z);
+                        if (Y < -y_lim || Y > y_lim) continue;
+                    }
+
+                    const float uf = static_cast<float>((fx * p_cam.x() / Z) + cx);
+                    const float vf = static_cast<float>((fy * p_cam.y() / Z) + cy);
+                    int u0 = static_cast<int>(std::round(uf));
+                    int v0 = static_cast<int>(std::round(vf));
+                    if ((unsigned)u0 >= (unsigned)W || (unsigned)v0 >= (unsigned)H) continue;
+
+                    // 溅射：更新 (u0,v0) 周围 (2r+1)^2 的最小深度
+                    const int umin = std::max(0, u0 - r), umax = std::min(W - 1, u0 + r);
+                    const int vmin = std::max(0, v0 - r), vmax = std::min(H - 1, v0 + r);
+                    for (int v = vmin; v <= vmax; ++v) {
+                        int base = v * W;
+                        for (int u = umin; u <= umax; ++u) {
+                            int idx = base + u;
+                            if (Z < depth_buf[idx]) depth_buf[idx] = Z;
+                        }
                     }
                 }
-            }
 
-            // 填充 32FC1
-            for (int r0 = 0; r0 < H; ++r0) {
-                float* row = depth32.ptr<float>(r0);
-                for (int c0 = 0; c0 < W; ++c0) {
-                    float z = depth_buf[r0*W + c0];
-                    row[c0] = (std::isfinite(z) ? z : 0.0f);
+                // 填充 32FC1（如需未压缩，可在此发布）
+                for (int rr = 0; rr < H; ++rr) {
+                    float* row = depth32.ptr<float>(rr);
+                    for (int cc = 0; cc < W; ++cc) {
+                        float z = depth_buf[rr*W + cc];
+                        row[cc] = (std::isfinite(z) ? z : 0.0f);
+                    }
                 }
+
+                // 压缩 8UC3（便于可视化）
+                for (int rr = 0; rr < H; ++rr) {
+                    uint8_t* row = depth8c1.ptr<uint8_t>(rr);
+                    const float* src = depth32.ptr<float>(rr);
+                    for (int cc = 0; cc < W; ++cc) row[cc] = meterToByte(src[cc], depth_max);
+                }
+                cv::cvtColor(depth8c1, depth8c3, cv::COLOR_GRAY2BGR);
+                png_buf.clear();
+                cv::imencode(".png", depth8c3, png_buf, png_params);
+
+                sensor_msgs::CompressedImage comp;
+                comp.header.stamp = stamp;
+                comp.header.frame_id = frame;
+                comp.format = "png";
+                comp.data = png_buf;
+                depthc_pubs[k].publish(comp);
             }
-
-            // 发布未压缩 depth
-            std_msgs::Header img_hdr;
-            img_hdr.stamp = stamp;
-            img_hdr.frame_id = frame;
-            depth_pub.publish(cv_bridge::CvImage(img_hdr, sensor_msgs::image_encodings::TYPE_32FC1, depth32).toImageMsg());
-
-            // 压缩 8UC3（便于可视化）
-            for (int r0=0; r0<H; ++r0) {
-                uint8_t* row = depth8c1.ptr<uint8_t>(r0);
-                const float* src = depth32.ptr<float>(r0);
-                for (int c0=0; c0<W; ++c0) row[c0] = meterToByte(src[c0], depth_max);
-            }
-            cv::cvtColor(depth8c1, depth8c3, cv::COLOR_GRAY2BGR);
-            png_buf.clear();
-            cv::imencode(".png", depth8c3, png_buf, png_params);
-
-            sensor_msgs::CompressedImage comp;
-            comp.header.stamp = stamp;
-            comp.header.frame_id = frame;
-            comp.format = "png";
-            comp.data = png_buf;
-            depthc_pub.publish(comp);
         } else {
             ROS_WARN_THROTTLE(5.0, "No odom yet on %s; skip depth rendering.", sensor_mgr.getOdomTopic().c_str());
         }
