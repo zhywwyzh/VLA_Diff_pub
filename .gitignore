@@ -13,9 +13,6 @@ Openpi/test/parquet_2_json/uav_flow/output
 Openpi/test/parquet_2_json/uav_flow/output_merged
 Openpi/test/parquet_2_json/uav_flow/output_parts
 city/
-simulation/EGO-Planner-v3/devel
-simulation/EGO-Planner-v3/build
-simulation/ROS-Unity_bridge/devel
 ros2_py310
 simulation/utils
 ai2thor
@@ -33,6 +30,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+devel/
 build/
 develop-eggs/
 dist/
