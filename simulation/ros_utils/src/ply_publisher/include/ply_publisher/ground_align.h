@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _GROUND_ALIGN_H
+#define _GROUND_ALIGN_H
 
 #include <ros/ros.h>
 #include <pcl/point_cloud.h>
@@ -55,3 +56,5 @@ private:
 };
 
 } // namespace ply_publisher
+
+#endif
