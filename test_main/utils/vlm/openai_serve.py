@@ -14,7 +14,7 @@ os.environ.pop("https_proxy", None)
 os.environ.pop("all_proxy", None)
 
 # 初始化客户端
-client = OpenAI(api_key='EMPTY', base_url='http://127.0.0.1:8000/v1')
+client = OpenAI(api_key='EMPTY', base_url='http://127.0.0.1:9000/v1')
 
 def open_serve(img_ori, img_cur, input):
     """
@@ -97,4 +97,7 @@ def open_serve(img_ori, img_cur, input):
 #     result = open_serve(img)
 #     print(result)
 
-# vllm serve /home/zhywwyzh/workspace/LLaMA-Factory/output/qwen2.5-vl-sft-awq --dtype auto --port 8000 --max-model-len 4096 --gpu-memory-utilization 0.8
+# vllm serve /home/zhywwyzh/workspace/LLaMA-Factory/output/sft_with_finish_awq --dtype auto --port 9000 --max-model-len 4096 --gpu-memory-utilization 0.8
+# CUDA_VISIBLE_DEVICES=6 vllm serve /vla/LLaMA-Factory/vla-sft/output/full/sft_rounded --dtype auto --port 8000 --max-model-len 4096 --gpu-memory-utilization 0.8
+
+# CUDA_VISIBLE_DEVICES=6 vllm serve /home/zhywwyzh/workspace/LLaMA-Factory/output/sft_rounded_awq --dtype auto --port 8000 --max-model-len 4096 --gpu-memory-utilization 0.8
