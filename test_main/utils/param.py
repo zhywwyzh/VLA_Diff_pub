@@ -6,6 +6,9 @@ class COMMAND_TYPE:
     GO_ORIGIN = 4
     AGAIN = 5
     EMERGENCY_STOP = 6
+    RESTART = 7
+    GET_PRE = 8
+    REPLAN = 9
 
 class VLA_STATE:
     INIT = 0

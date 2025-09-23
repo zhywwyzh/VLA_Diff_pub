@@ -55,14 +55,15 @@ class CommandPublisher:
         while not rospy.is_shutdown():
             # ===== 输入 command/type =====
             cmd_type = None
-            while cmd_type not in [0, 1, 2, 3, 4, 5, 6]:
+            while cmd_type not in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
                 try:
-                    cmd_type = int(input("请输入 command/type (0:wait, 1:stop, 2:go, 3:next, 4:go_origin, 5:again, 6:emergency_stop): "))
+                    cmd_type = int(input("请输入 command/type (0:wait, 1:stop, 2:go, 3:next, 4:go_origin, 5:again, 6:emergency_stop, 7:restart, 8:get_pre, 9:replan): "))
+                    # cmd_type = int(input("请输入 command/type (4:go_origin, 5:again, 6:emergency_stop, 7:restart, 8:get_pre, 9:restart): "))
                 except ValueError:
-                    print("❌ 输入必须是整数 (0,1,2,3,4,5,6)")
+                    print("❌ 输入必须是整数 (0,1,2,3,4,5,6,7,8,9)")
                     continue
-                if cmd_type not in [0, 1, 2, 3, 4, 5, 6]:
-                    print("❌ 输入错误，请输入 0, 1, 2, 3, 4, 5 或 6")
+                if cmd_type not in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
+                    print("❌ 输入错误，请输入 0, 1, 2, 3, 4, 5, 6, 7, 8 或 9")
 
             if cmd_type == 1:
                 print("🛑 收到 type=1，程序结束")
