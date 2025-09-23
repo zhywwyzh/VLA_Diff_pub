@@ -1,0 +1,62 @@
+<launch>
+  <node pkg="ply_publisher" type="ply_publisher_node" name="ply_publisher_node" output="screen">
+    <!-- 点云 -->
+    <param name="ply_file" value="/home/oo/VLA/ros_utils/output_3dgs1.ply" />
+    <param name="topic_name" value="/ply_points" />
+
+    <!-- 深度 -->
+    <param name="depth_topic" value="/camera1/depth/image" />
+    <param name="depth_compressed_topic" value="/camera1/depth/image/compressed" />
+    <param name="camera_info_topic" value="/camera1/camera_info" />
+
+    <param name="publish_raw_depth" value="false"/>
+    <param name="publish_compressed_depth" value="true"/>
+
+    <!-- 渲染/裁剪相关参数 -->
+    <param name="enable_downsample" value="false"/>
+    <param name="leaf_size" value="0.05"/>
+    <param name="use_cropbox" value="false"/>
+    <param name="frustum_culling" value="false"/>
+    <param name="render_stride" value="1"/>
+    <param name="png_level" value="0"/>
+    <param name="splat_radius_px" value="2"/>
+    <param name="use_optical_convention" value="true"/>
+
+    <!-- 里程计 -->
+    <param name="odom_topic" value="/drone_0_visual_slam/odom" />
+
+    <!-- 相机内参 -->
+    <param name="image_width" value="640" />
+    <param name="image_height" value="480" />
+    <param name="fx" value="442.0250167097101" />
+    <param name="fy" value="442.0250167097101" />
+    <param name="cx" value="320.0" />
+    <param name="cy" value="240.0" />
+    <param name="depth_max" value="5.0" />
+
+    <!-- Unity->ROS -->
+    <!-- <rosparam param="unity_pos">[13.41, 0.1458275, 0.23]</rosparam>
+    <rosparam param="unity_rot_deg">[90.141, -0.9069977, -55.251]</rosparam>
+    <rosparam param="unity_scale">[6.421318, -6.421318, -6.421318]</rosparam> -->
+
+    <rosparam param="unity_pos">[0,0,0]</rosparam>
+    <rosparam param="unity_rot_deg">[0,0,0]</rosparam>
+    <rosparam param="unity_scale">[1, 1, 1]</rosparam>
+
+    <!-- 频率与下采样 -->
+    <param name="depth_rate_hz" value="30.0" />
+    <param name="point_rate_hz" value="1.0" />
+    <param name="leaf_size" value="0.01" />
+    <param name="enable_downsample" value="false" />
+
+    <!-- ★ 地面对齐到 z=0 -->
+    <param name="enable_ground_align" value="false" />
+    <param name="ground_ransac_dist" value="0.02" />
+    <param name="ground_eps_deg" value="45.0" />
+    <param name="ground_max_iter" value="2000" />
+  </node>
+
+  <!-- 可选：颜色图像解压示例 -->
+  <node pkg="image_transport" type="republish" name="color_decompress" output="screen"
+        args="compressed in:=/camera1/color/image raw out:=/camera1/color/image_raw" />
+</launch>

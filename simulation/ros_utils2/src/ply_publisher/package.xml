@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>ply_publisher</name>
+  <version>0.1.0</version>
+  <description>Publish PLY-based point cloud and synthetic depth images with optional ground alignment.</description>
+
+  <maintainer email="953059545@qq.com">zhywwyzh</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <build_depend>pcl_conversions</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>eigen</build_depend>
+  <build_depend>opencv2</build_depend>
+
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>pcl_ros</exec_depend>
+  <exec_depend>pcl_conversions</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>image_transport</exec_depend>
+  <exec_depend>eigen</exec_depend>
+  <exec_depend>opencv2</exec_depend>
+
+  <export>
+    <!-- No special exports -->
+  </export>
+</package>

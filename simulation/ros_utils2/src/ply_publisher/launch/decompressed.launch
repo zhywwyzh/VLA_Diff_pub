@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="image_transport" type="republish" name="color_decompress" output="screen"
+        args="compressed in:=/camera1/color/image raw out:=/camera1/color/image_raw" />
+</launch>
