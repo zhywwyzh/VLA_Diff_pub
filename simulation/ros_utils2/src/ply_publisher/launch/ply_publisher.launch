@@ -1,7 +1,7 @@
 <launch>
   <node pkg="ply_publisher" type="ply_publisher_node" name="ply_publisher_node" output="screen">
     <!-- 点云 -->
-    <param name="ply_file" value="/home/oo/VLA/ros_utils/output_3dgs1.ply" />
+    <param name="ply_file" value="/home/zhywwyzh/workspace/VLA_Diff/unity/output_3dgs1.ply" />
     <param name="topic_name" value="/ply_points" />
 
     <!-- 深度 -->
@@ -33,6 +33,22 @@
     <param name="cx" value="320.0" />
     <param name="cy" value="240.0" />
     <param name="depth_max" value="5.0" />
+
+    <!-- LiDAR 参数 -->
+    <param name="lidar_enable"       value="true"/>
+    <param name="lidar_topic"        value="/mid360/points"/>
+    <param name="lidar_rate_hz"      value="10.0"/>
+
+    <param name="lidar_hfov_deg"     value="270.0"/>
+    <param name="lidar_vfov_up_deg"  value="15.0"/>
+    <param name="lidar_vfov_dn_deg"  value="-25.0"/>
+
+    <param name="lidar_max_range"    value="5.0"/>
+    <param name="lidar_min_range"    value="0.00"/>
+
+    <param name="lidar_downsample_enable" value="true"/>
+    <param name="lidar_voxel_size" value="0.2"/>
+    <param name="lidar_random_keep" value="-1"/>
 
     <!-- Unity->ROS -->
     <!-- <rosparam param="unity_pos">[13.41, 0.1458275, 0.23]</rosparam>

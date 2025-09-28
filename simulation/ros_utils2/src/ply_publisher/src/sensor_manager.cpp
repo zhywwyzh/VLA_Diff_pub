@@ -5,6 +5,7 @@ void SensorManager::initParams() {
     ros::NodeHandle nh("~");
     nh.param<std::string>("odom_topic", odom_topic_, "/unity_odom");
 
+    // 相机内参
     nh.param<int>("image_width", image_width_, 640);
     nh.param<int>("image_height", image_height_, 480);
     nh.param<double>("fx", fx_, 442.0250167097101);

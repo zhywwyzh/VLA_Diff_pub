@@ -7,6 +7,9 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/random_sample.h>
+
 #include <opencv2/opencv.hpp>
 
 #include <pcl_conversions/pcl_conversions.h>
@@ -75,7 +78,7 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "ply_publisher_node");
     ros::NodeHandle nh("~");
 
-    // 参数（可在 launch 中覆盖）
+    // 参数
     std::string ply_file;            nh.param<std::string>("ply_file", ply_file, "test.ply");
     std::string point_topic;         nh.param<std::string>("topic_name", point_topic, "/ply_points");
     std::string caminfo_topic;       nh.param<std::string>("camera_info_topic", caminfo_topic, "/camera0/camera_info");
@@ -102,11 +105,42 @@ int main(int argc, char** argv) {
     // 分块参数
     double block_size;               nh.param<double>("block_size", block_size, 0.5); // 默认 0.5m 的块
 
-    // unity transform params（如果有）
+    // unity transform params
     std::vector<double> unity_pos_v, unity_rot_v, unity_scale_v;
     nh.param<std::vector<double>>("unity_pos",       unity_pos_v,  std::vector<double>{0, 0, 0});
     nh.param<std::vector<double>>("unity_rot_deg",   unity_rot_v,  std::vector<double>{0, 0, 0});
     nh.param<std::vector<double>>("unity_scale",     unity_scale_v,std::vector<double>{1, 1, 1});
+
+    // lidar参数
+    // mid-360-like LiDAR params
+    std::string lidar_topic; 
+    double lidar_rate_hz; 
+    double lidar_max_range; 
+    double lidar_min_range; 
+    nh.param<std::string>("lidar_topic", lidar_topic, std::string("/mid360/points"));
+    nh.param<double>("lidar_rate_hz", lidar_rate_hz, 10.0);
+    nh.param<double>("lidar_max_range", lidar_max_range, 8.0);
+    nh.param<double>("lidar_min_range", lidar_min_range, 0.05);
+
+    // 水平/垂直扫描范围（角度，度）
+    double lidar_hfov_deg; 
+    double lidar_vfov_up_deg;  
+    double lidar_vfov_dn_deg;  
+    nh.param<double>("lidar_hfov_deg", lidar_hfov_deg, 360.0);
+    nh.param<double>("lidar_vfov_up_deg", lidar_vfov_up_deg, 15.0);
+    nh.param<double>("lidar_vfov_dn_deg", lidar_vfov_dn_deg, -25.0);
+
+    // 降采样参数
+    bool lidar_downsample_enable; 
+    double lidar_voxel_size; 
+    int lidar_random_keep; 
+    nh.param<bool>("lidar_downsample_enable", lidar_downsample_enable, true);
+    nh.param<double>("lidar_voxel_size", lidar_voxel_size, 0.05);
+    nh.param<int>("lidar_random_keep", lidar_random_keep, -1);
+
+    // 是否启用
+    bool lidar_enable;
+    nh.param<bool>("lidar_enable", lidar_enable, true);
 
     // ---------------- Prepare sensors & point cloud ----------------
     SensorManager sensor_mgr;
@@ -136,7 +170,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // ground align（如果需要）
+    // ground align
     pcl::PointCloud<PointT>::ConstPtr cloud_aligned_const;
     Eigen::Affine3f T_align = Eigen::Affine3f::Identity();
     ply_publisher::GroundAlign ground_align;
@@ -198,6 +232,11 @@ int main(int argc, char** argv) {
         nh.advertise<sensor_msgs::Image>("/camera2/depth/image", 1),
         nh.advertise<sensor_msgs::Image>("/camera3/depth/image", 1)
     };
+
+    // ---------------- LiDAR publisher (if enabled) ----------------
+    ros::Publisher lidar_pub = nh.advertise<sensor_msgs::PointCloud2>(lidar_topic, 1);
+    const ros::Duration lidar_period = ros::Duration(1.0 / std::max(1e-3, lidar_rate_hz));
+    ros::Time last_lidar_pub = ros::Time(0);
 
     // prepare pointcloud message
     sensor_msgs::PointCloud2 pc2_msg;
@@ -395,6 +434,92 @@ int main(int argc, char** argv) {
 
             last_depth_pub = now;
         } // end if new_odom & under_rate
+
+        const Eigen::Vector3f t_wb(odom.pose.pose.position.x,
+                           odom.pose.pose.position.y,
+                           odom.pose.pose.position.z);
+        const Eigen::Quaternionf q_wb(odom.pose.pose.orientation.w,
+                                    odom.pose.pose.orientation.x,
+                                    odom.pose.pose.orientation.y,
+                                    odom.pose.pose.orientation.z);
+        const Eigen::Matrix3f R_wb = q_wb.toRotationMatrix();
+        const Eigen::Matrix3f R_bw = R_wb.transpose();
+
+        if (lidar_enable && ((now - last_lidar_pub) >= lidar_period)) {
+            // 角度阈值（转弧度）
+            const float hfov_rad = static_cast<float>(lidar_hfov_deg * M_PI / 180.0);
+            const float vup_rad  = static_cast<float>(lidar_vfov_up_deg * M_PI / 180.0);
+            const float vdn_rad  = static_cast<float>(lidar_vfov_dn_deg * M_PI / 180.0);
+
+            // 构造输出点云
+            pcl::PointCloud<PointT>::Ptr lidar_cloud(new pcl::PointCloud<PointT>());
+            lidar_cloud->reserve(200000);
+
+            // 用 block_map 做粗裁剪，然后逐点筛选（效率更高）
+            for (const auto &kv : block_map) {
+                const Block &blk = kv.second;
+
+                // 快速可见性/距离粗判断：看 block 中心在体坐标的相对位置
+                Eigen::Vector3f p_b_center = R_bw * (blk.center - t_wb);
+                const float Rxy = std::sqrt(p_b_center.x()*p_b_center.x() + p_b_center.y()*p_b_center.y());
+                const float r_center = std::sqrt(Rxy*Rxy + p_b_center.z()*p_b_center.z());
+
+                // 粗距离剔除（用 block 对角做 margin）
+                if (r_center - blk.half_diag > static_cast<float>(lidar_max_range)) continue;
+                if (r_center + blk.half_diag < static_cast<float>(lidar_min_range)) continue;
+
+                // 遍历 block 内的点，做精确角域与距离筛选
+                for (int idx : blk.indices) {
+                    const auto &pw = full_cloud->points[idx];
+                    Eigen::Vector3f pb = R_bw * (Eigen::Vector3f(pw.x, pw.y, pw.z) - t_wb);
+
+                    const float x = pb.x(), y = pb.y(), z = pb.z();
+                    const float r = std::sqrt(x*x + y*y + z*z);
+                    if (r < static_cast<float>(lidar_min_range) || r > static_cast<float>(lidar_max_range)) continue;
+
+                    // 水平角（-pi, pi]）与垂直角（俯仰）
+                    const float az = std::atan2(y, x);                  // 水平角
+                    const float el = std::atan2(z, std::sqrt(x*x+y*y)); // 俯仰角
+
+                    // 水平 FOV 判断：允许任意中心，默认 360 全开（只需判断跨度）
+                    if (hfov_rad < static_cast<float>(2.0*M_PI)) {
+                        // 将 |az| 与 hfov/2 比较
+                        if (std::fabs(az) > 0.5f * hfov_rad) continue;
+                    }
+                    // 垂直 FOV（下负上正）
+                    if (el > vup_rad || el < vdn_rad) continue;
+
+                    // 通过：将世界系坐标直接写入（或改为体坐标/雷达坐标，看你需求）
+                    lidar_cloud->push_back(PointT{pw.x, pw.y, pw.z});
+                }
+            }
+
+            if (lidar_downsample_enable) {
+                pcl::VoxelGrid<PointT> vg;
+                vg.setInputCloud(lidar_cloud);
+                vg.setLeafSize(lidar_voxel_size, lidar_voxel_size, lidar_voxel_size);
+                pcl::PointCloud<PointT>::Ptr filtered(new pcl::PointCloud<PointT>());
+                vg.filter(*filtered);
+                lidar_cloud.swap(filtered);
+            }
+            if (lidar_random_keep > 0 && lidar_random_keep < static_cast<int>(lidar_cloud->size())) {
+                pcl::RandomSample<PointT> rs;
+                rs.setInputCloud(lidar_cloud);
+                rs.setSample(lidar_random_keep);
+                pcl::PointCloud<PointT>::Ptr filtered(new pcl::PointCloud<PointT>());
+                rs.filter(*filtered);
+                lidar_cloud.swap(filtered);
+            }
+
+            ROS_INFO("LiDAR point cloud contains %zu points", lidar_cloud->size());
+            // 打包并发布
+            sensor_msgs::PointCloud2 lidar_msg;
+            pcl::toROSMsg(*lidar_cloud, lidar_msg);
+            lidar_msg.header.stamp = odom.header.stamp;
+            lidar_msg.header.frame_id = "world";
+            lidar_pub.publish(lidar_msg);
+            last_lidar_pub = now;
+        }
 
         idle.sleep();
     } // end while
