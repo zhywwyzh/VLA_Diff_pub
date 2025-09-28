@@ -33,7 +33,7 @@ private:
     double depth_max_ = 5.0;
 
     // 里程计话题
-    std::string odom_topic_ = "/drone_0_visual_slam/odom";
+    std::string odom_topic_ = "/unity_odom";
 
     // 统一使用 world
     std::string frame_id_ = "world";

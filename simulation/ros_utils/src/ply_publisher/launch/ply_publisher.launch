@@ -24,7 +24,7 @@
     <param name="use_optical_convention" value="true"/>
 
     <!-- 里程计 -->
-    <param name="odom_topic" value="/drone_0_visual_slam/odom" />
+    <param name="odom_topic" value="/unity_odom" />
 
     <!-- 相机内参 -->
     <param name="image_width" value="640" />
@@ -43,7 +43,7 @@
     <!-- 频率与下采样 -->
     <param name="depth_rate_hz" value="10.0" />
     <param name="point_rate_hz" value="1.0" />
-    <param name="enable_downsample" value="false" />
+    <param name="enable_downsample" value="true" />
 
     <!-- 地面对齐（保留） -->
     <param name="enable_ground_align" value="false" />

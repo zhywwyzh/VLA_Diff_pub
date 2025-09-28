@@ -64,7 +64,7 @@ void pubLocalGoal(Eigen::Vector3d local_aim_pose, double yaw_aim, bool look_forw
   ego_goal_msg.drone_id = 0;
   ego_goal_msg.goal[0]  = local_aim_pose.x();
   ego_goal_msg.goal[1]  = local_aim_pose.y();
-  ego_goal_msg.goal[2]  = 1.6;
+  ego_goal_msg.goal[2]  = 1.0;
   ego_goal_msg.yaw              = yaw_aim;
   ego_goal_msg.look_forward     = look_forward;
   ego_goal_msg.goal_to_follower = false;

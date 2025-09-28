@@ -3,7 +3,7 @@
 
 void SensorManager::initParams() {
     ros::NodeHandle nh("~");
-    nh.param<std::string>("odom_topic", odom_topic_, "/drone_0_visual_slam/odom");
+    nh.param<std::string>("odom_topic", odom_topic_, "/unity_odom");
 
     nh.param<int>("image_width", image_width_, 640);
     nh.param<int>("image_height", image_height_, 480);

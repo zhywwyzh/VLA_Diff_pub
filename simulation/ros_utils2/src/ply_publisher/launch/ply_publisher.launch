@@ -23,7 +23,7 @@
     <param name="use_optical_convention" value="true"/>
 
     <!-- 里程计 -->
-    <param name="odom_topic" value="/drone_0_visual_slam/odom" />
+    <param name="odom_topic" value="/unity_odom" />
 
     <!-- 相机内参 -->
     <param name="image_width" value="640" />
