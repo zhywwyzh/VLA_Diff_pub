@@ -69,7 +69,7 @@ def open_serve(img_ori, img_cur, input):
     # 返回内容部分
     # 获取字符串内容
     content = response.choices[0].message.content
-    print(f"模型返回内容: {content}")
+    # print(f"模型返回内容: {content}")
 
     data = json.loads(content)
     result = {
@@ -77,7 +77,7 @@ def open_serve(img_ori, img_cur, input):
         "yaw": data.get("yaw", 0.0),
     }
 
-    finish_mission = data.get("finish_mission", False)
+    finish_mission = data.get("mission_finish", False)
 
 
     # 去掉 ```json ... ``` 包裹
@@ -97,7 +97,7 @@ def open_serve(img_ori, img_cur, input):
 #     result = open_serve(img)
 #     print(result)
 
-# vllm serve /home/zhywwyzh/workspace/LLaMA-Factory/output/sft_with_finish_awq --dtype auto --port 9000 --max-model-len 4096 --gpu-memory-utilization 0.8
+# vllm serve /home/zhywwyzh/workspace/LLaMA-Factory/output/3dgs/7B/full_sft_all_unfreeze_gptq --dtype auto --port 9000 --max-model-len 4096 --gpu-memory-utilization 0.8
 # CUDA_VISIBLE_DEVICES=6 vllm serve /vla/LLaMA-Factory/vla-sft/output/full/sft_rounded --dtype auto --port 8000 --max-model-len 4096 --gpu-memory-utilization 0.8
 
 # CUDA_VISIBLE_DEVICES=6 vllm serve /home/zhywwyzh/workspace/LLaMA-Factory/output/sft_rounded_awq --dtype auto --port 8000 --max-model-len 4096 --gpu-memory-utilization 0.8

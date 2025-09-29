@@ -21,4 +21,6 @@ class VLA_STATE:
     ERROR = 7
     GO_ORIGIN = 8
     REPLY_MLLM = 9
+    EGO_FINISH = 10
+    GET_PRE = 11
 

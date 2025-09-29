@@ -40,9 +40,9 @@ class BasePolicyNode(object):
         self.depth_scale_param = 57.0
 
         # message_filters 同步订阅
-        self.odom_sub  = MFSubscriber('/unity_depth_odom1', Odometry, queue_size=10)
+        self.odom_sub  = MFSubscriber('/unity_odom', Odometry, queue_size=10)
         self.rgb_sub   = MFSubscriber('/camera1/color/image/compressed', CompressedImage, queue_size=10)
-        self.depth_sub = MFSubscriber('/camera1/depth/image/compressed', CompressedImage, queue_size=10)
+        self.depth_sub = MFSubscriber('/camera0/depth/image/compressed', CompressedImage, queue_size=10)
 
         self.pc_frame_id   = rospy.get_param("~pc_frame_id", "world")  # 点云坐标系，默认世界系
         self.pc_stride     = int(rospy.get_param("~pc_stride", 1))     # 采样步长，=1表示逐像素
