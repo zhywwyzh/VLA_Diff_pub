@@ -9,7 +9,6 @@ import re
 import pdb
 import time
 import threading
-import ast
 import math
 
 import imageio.v2 as imageio
@@ -23,12 +22,11 @@ from std_msgs.msg import String, Int32, Empty, Bool
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped, Point
 from quadrotor_msgs.msg import GoalSet
-from cv_bridge import CvBridge
 
 import cv2
 from cv_bridge import CvBridge
 
-from utils.vlm.openai_serve import open_serve
+from utils.vlm.openai_serve_ori import open_serve
 from utils.param import COMMAND_TYPE, VLA_STATE
 
 from base_policy import BasePolicyNode  # 假定已有 ROS1 版本或与 ROS 无关的 Base
@@ -51,15 +49,15 @@ class UAVPolicyNode(BasePolicyNode):
         self.last_command = None
         self.first_mission_frame = None
         self.prepare_content = [
-            "<image>\n<image>\n<image>\n你将得到首次观察rgb图像、当前观察的rgb图像、当前观察的depth图像。请在首次观察图像中前往右侧窗帘边的第一棵树，并给出在世界空间中任务目标点相对相机中心的变换三维坐标点与yaw角旋转角。给出的三维坐标可以不与深度对应，但不得超出对应深度范围。请按照json格式{\\\"pos\\\": (x, y, z), \\\"yaw\\\": delta_yaw, \\\"mission_finish\\\": *}输出结果。已知深度相机的深度范围为0.2m-5.0m,参数为fx = fy = 442.025，cx = 320, cy = 240，不存在畸变，图像尺寸为height: 480, width: 640",
-            "<image>\n<image>\n<image>\n请执行旋转任务，请原地左转90度，并给出在世界空间中任务目标点相对相机中心的yaw角旋转角。请按照json格式{原地旋转\\\"yaw\\\": delta_yaw, \\\"mission_finish\\\": *}输出结果。",
-            "<image>\n<image>\n<image>\n你将得到首次观察rgb图像、当前观察的rgb图像、当前观察的depth图像。请在首次观察图像中前往最近的白色柱子，并给出在世界空间中任务目标点相对相机中心的变换三维坐标点与yaw角旋转角。给出的三维坐标可以不与深度对应，但不得超出对应深度范围。请按照json格式{\\\"pos\\\": (x, y, z), \\\"yaw\\\": delta_yaw, \\\"mission_finish\\\": *}输出结果。已知深度相机的深度范围为0.2m-5.0m,参数为fx = fy = 442.025，cx = 320, cy = 240，不存在畸变，图像尺寸为height: 480, width: 640"
+            # "前往左侧第一棵树",
+            # "请原地右转90度",
+            "前往最近的白色柱子"
             ]
         self.command_content = []
         self.content = self.prepare_content.copy()
         self.pre_prompt = [
-            "前往右侧窗帘边的第一棵树",
-            "请原地左转90度",
+            # "前往左侧第一棵树",
+            # "请原地右转90度",
             "前往最近的白色柱子",
             "完成任务"
             ]
@@ -105,8 +103,6 @@ class UAVPolicyNode(BasePolicyNode):
             "command/content", String, self.command_content_callback, queue_size=10
         )
 
-        self.type_pub = rospy.Publisher("command/type", Int32, queue_size=10)
-
         # 订阅ego_planner的状态指令
         self.ego_state_trigger_sub = rospy.Subscriber(
             "/planning/ego_state_trigger", Bool, self.ego_state_trigger_callback, queue_size=10
@@ -131,12 +127,6 @@ class UAVPolicyNode(BasePolicyNode):
             'current_mission_image', Image, queue_size=10
         )
 
-        # 发布vla状态
-        self.vla_state_pub = rospy.Publisher(
-            'vla_state', Int32, queue_size=10
-        )
-        self.timer = rospy.Timer(rospy.Duration(0.5), self.timer_callback)
-
         # 初始化 WebSocket / 服务端客户端
         self.client = None
         self.prompt = None
@@ -159,13 +149,6 @@ class UAVPolicyNode(BasePolicyNode):
         # 启动消息监听线程
         self.listener_thread = threading.Thread(target=self.listen_messages, daemon=True)
         self.listener_thread.start()
-
-    def timer_callback(self, event):
-        """定时器回调函数, 发布当前状态"""
-        msg = Int32()
-        msg.data = self.vla_state
-        self.vla_state_pub.publish(msg)
-        # rospy.loginfo(f"发布 vla_state: {self.vla_state}")
 
     def command_type_callback(self, msg: Int32):
         """处理指令需求回调"""
@@ -240,49 +223,37 @@ class UAVPolicyNode(BasePolicyNode):
         self.vla_state = VLA_STATE.PLAN
         # rospy.loginfo(f"✅ 收到完整 content 消息: {msg.data}")
 
+    # TODO 调整ego回调逻辑
     def ego_state_trigger_callback(self, msg: Bool):
         """处理ego_state_trigger回调"""
         print("收到 ego_state_trigger 信号")
         self.ego_state_trigger = msg.data
         self.vla_state = VLA_STATE.EGO_FINISH
 
+    # TODO 修改提取方案
     def get_command_content(self):
         """从mllm消息中提取指令内容"""
         if self.mllm_message is not None:
             return self.mllm_message
         return None
 
+    # TODO 修改监听端口
+    # def listen_messages(self):
+    #     """循环监听mllm新消息"""
+    #     while not rospy.is_shutdown():
+    #         try:
+    #             message = self.receive_client.get_new_messages()
+    #             if message:
+    #                 self.mllm_message = message[0]["text"]
+    #                 self.command_content.append(self.mllm_message)
+    #                 rospy.loginfo(f"Received message: {self.mllm_message}")
+    #         except Exception as e:
+    #             rospy.logerr(f"消息监听出错: {e}")
+    #         time.sleep(0.5)
+
     def listen_messages(self):
         """循环监听mllm新消息"""
         pass
-
-    def publish_image(self, image, pub):
-        """发布图像到ROS话题"""
-        # 确定编码方式
-        if image is None:
-            return
-        # 判断编码
-        if image.dtype == np.uint8:
-            if len(image.shape) == 3 and image.shape[2] == 3:
-                encoding = "bgr8"
-            elif len(image.shape) == 2:
-                encoding = "mono8"
-            else:
-                rospy.logerr(f"不支持的图像 shape: {image.shape}")
-                return
-        elif image.dtype == np.uint16:
-            encoding = "16UC1"   # 深度图常用
-        elif image.dtype == np.float32:
-            encoding = "32FC1"   # 浮点深度图常用
-        else:
-            rospy.logerr(f"不支持的图像 dtype: {image.dtype}")
-            return
-
-        # 转换并发布
-        ros_img = self.bridge.cv2_to_imgmsg(image, encoding=encoding)
-        pub.publish(ros_img)
-        # rospy.loginfo(f"图像已发布，编码: {encoding}, shape: {image.shape}, dtype: {image.dtype}")
-
 
     def publish_action(self, action, look_forward=True, goal_to_follower=False):
         """发布动作到ROS话题"""
@@ -312,6 +283,7 @@ class UAVPolicyNode(BasePolicyNode):
         pose_msg.goal_to_follower = goal_to_follower
 
         self.action_pub.publish(pose_msg)
+
     def get_judgement(self, message):
         """判断是否包含 True 或 False"""
         text = message[0]['text']
@@ -327,7 +299,36 @@ class UAVPolicyNode(BasePolicyNode):
         else:
             print("未收到相关结果，请重试")
             return False
+        
+    def publish_image(self, image, pub):
+        """发布图像到ROS话题"""
+        # 确定编码方式
+        if image is None:
+            return
+        # 判断编码
+        if image.dtype == np.uint8:
+            if len(image.shape) == 3 and image.shape[2] == 3:
+                encoding = "bgr8"
+            elif len(image.shape) == 2:
+                encoding = "mono8"
+            else:
+                rospy.logerr(f"不支持的图像 shape: {image.shape}")
+                return
+        elif image.dtype == np.uint16:
+            encoding = "16UC1"   # 深度图常用
+        elif image.dtype == np.float32:
+            encoding = "32FC1"   # 浮点深度图常用
+        else:
+            rospy.logerr(f"不支持的图像 dtype: {image.dtype}")
+            return
 
+        # 转换并发布
+        ros_img = self.bridge.cv2_to_imgmsg(image, encoding=encoding)
+        pub.publish(ros_img)
+        # rospy.loginfo(f"图像已发布，编码: {encoding}, shape: {image.shape}, dtype: {image.dtype}")
+
+
+    # TODO 推理逻辑初始化，初始与mllm的通信
     def run_inference(self):
         """执行推理"""
         rate = rospy.Rate(20)
@@ -340,15 +341,6 @@ class UAVPolicyNode(BasePolicyNode):
             time.sleep(1)
         
         self.first_image = self.frame.rgb_image
-        # response = self.publish_client.send_image(self.first_image)
-        # rospy.loginfo(f"发送第一张图片: {response}")
-
-        # while not rospy.is_shutdown():
-        #     if self.mllm_message is not None:
-        #         rospy.loginfo(f"收到任务信息: {self.mllm_message}")
-        #         self.command_content = self.get_command_content()
-        #         self.mllm_message.append(self.command_content)
-        #         break
 
         def is_waypoint_cmd(c) -> bool:
             if isinstance(c, (list, tuple, np.ndarray)):
@@ -395,8 +387,10 @@ class UAVPolicyNode(BasePolicyNode):
                     # rospy.loginfo(f"当前帧接收状态: {response['message']}")
                     continue
 
+                # TODO 调整plan与replan
                 case VLA_STATE.PLAN:
                     try:
+                        # if self.frame is None or getattr(self, 'depth_info', None) is None:
                         if self.frame is None:
                             rospy.logwarn("传感器未准备好，重新初始化")
                             self.vla_state = VLA_STATE.INIT
@@ -443,7 +437,7 @@ class UAVPolicyNode(BasePolicyNode):
                             self.vla_state = VLA_STATE.REPLY_MLLM
                             type_msg = Int32()
                             type_msg.data = 8
-                            self.type_pub.publish(type_msg)
+                            # self.type_pub.publish(type_msg)
                             print("准备下一项目")
 
                         elif is_label_cmd(cmd):
@@ -456,39 +450,12 @@ class UAVPolicyNode(BasePolicyNode):
                             self.publish_image(self.frame.rgb_image, self.current_image_pub)
                             origin_time = time.time()
                             self.result, self.finish_mission = open_serve(self.first_mission_frame, self.frame.rgb_image, cmd)
+                            print(f"像素中心位于：{self.result}")
                             rospy.loginfo(f"推理耗时: {time.time() - origin_time:.2f} 秒")
-                            rospy.loginfo(f"推理结果: {self.result}, 任务完成: {self.finish_mission}")
-                            # TODO 待修改mllm输入信息结构
-                            pos_offset = np.array(self.result["pos"], dtype=np.float64)
+                            # pdb.set_trace()
+                            waypoint, self.replan = self.pixel_to_world(self.result, self.frame)
 
-                            # 将局部坐标系的偏移量转换到世界坐标系
-                            current_yaw = self.frame.current_state[5]  # 机器人当前偏航角（世界坐标系）
-                            cos_yaw = np.cos(current_yaw)
-                            sin_yaw = np.sin(current_yaw)
-
-                            # 坐标变换：局部坐标系到世界坐标系
-                            pos_offset_world = np.array([
-                                pos_offset[0] * cos_yaw - pos_offset[1] * sin_yaw,  # x分量
-                                pos_offset[0] * sin_yaw + pos_offset[1] * cos_yaw,  # y分量
-                                pos_offset[2]  # z分量保持不变
-                            ])
-
-                            # # 判断欧式距离是否小于阈值（在世界坐标系下）
-                            # if np.linalg.norm(pos_offset_world) < 0.4:
-                            #     self.finish_mission = True
-
-                            xyz = self.frame.current_state[:3] + pos_offset_world
-                            yaw = self.frame.current_state[5] + self.result["yaw"] / 180 * math.pi
-                            if abs(yaw) > 1e-3:
-                                self.if_yaw = True
-                            waypoint = np.array([
-                                xyz[0],
-                                xyz[1],
-                                xyz[2],
-                                0.0,
-                                0.0,
-                                yaw
-                            ], dtype=np.float64)
+                            rospy.loginfo(f"解析到的导航点: {waypoint}, 任务完成状态: {self.finish_mission}")
 
                             self.waypoint = waypoint
 
@@ -522,7 +489,7 @@ class UAVPolicyNode(BasePolicyNode):
                     print(f"当前位于: {[round(x, 2) for x in self.frame.current_state]}")
                     print(f"发布导航点: {[round(x, 2) for x in waypoint]}\n")
                     self.last_state = np.array([waypoint[0], waypoint[1], waypoint[2], 0, 0, 0], dtype=np.float64)
-                    # time.sleep(0.5)  # 等待动作发布完成           
+                    # time.sleep(0.5)  # 等待动作发布完成
                 case VLA_STATE.WAIT_ACTION_FINISH:
                     # self.frame = self.get_frame_snapshot()
                     time.sleep(0.1)
@@ -586,7 +553,7 @@ class UAVPolicyNode(BasePolicyNode):
                         self.vla_state = VLA_STATE.REPLY_MLLM
                         type_msg = Int32()
                         type_msg.data = 8
-                        self.type_pub.publish(type_msg)
+                        # self.type_pub.publish(type_msg)
                         self.finish_command = False
                         print("准备下一项目")
                     else:

@@ -9,7 +9,7 @@ import rospy
 from dataclasses import dataclass
 from typing import Optional
 from message_filters import Subscriber as MFSubscriber, ApproximateTimeSynchronizer
-from sensor_msgs.msg import CompressedImage, CameraInfo
+from sensor_msgs.msg import CompressedImage, CameraInfo, Image
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
 import pdb
@@ -17,7 +17,8 @@ from sensor_msgs.msg import PointCloud2, PointField
 import sensor_msgs.point_cloud2 as pc2
 from visualization_msgs.msg import Marker
 import math
-import pdb
+import cv_bridge
+
 
 
 @dataclass
@@ -34,15 +35,27 @@ class BasePolicyNode(object):
         self.frame_lock = threading.Lock()
         self.frame: Optional[Frame] = None
         self.depth_info = None
-        self.extrinsics = np.array([0.15, 0, 0.1], dtype=np.float64)
+        self.extrinsics = np.array([0.0, 0, 0.0], dtype=np.float64)
         self.safe_dis = 0.6
         self.use_intrinsics = True
         self.depth_scale_param = 57.0
+        
+        self.depth_info = {
+                'height': 640, 'width': 480,
+                'fx': 603.1439208984375, 'fy': 602.61083984375,
+                'cx': 326.0789794921875, 'cy': 602.61083984375,
+                'fov': 57.0
+            }
+
+        self.bridge = cv_bridge.CvBridge()
 
         # message_filters 同步订阅
-        self.odom_sub  = MFSubscriber('/unity_odom', Odometry, queue_size=10)
-        self.rgb_sub   = MFSubscriber('/camera1/color/image/compressed', CompressedImage, queue_size=10)
-        self.depth_sub = MFSubscriber('/camera0/depth/image/compressed', CompressedImage, queue_size=10)
+        self.odom_sub  = MFSubscriber('/ekf_quat/ekf_odom', Odometry, queue_size=20)
+        self.rgb_sub   = MFSubscriber('/camera/color/image_raw', Image, queue_size=20)
+
+        # TODO depth对齐文件
+        # self.depth_sub = MFSubscriber('/camera/depth/image_raw', Image, queue_size=10)
+        self.depth_sub = MFSubscriber('/camera/aligned_depth/image_raw', Image, queue_size=20)
 
         self.pc_frame_id   = rospy.get_param("~pc_frame_id", "world")  # 点云坐标系，默认世界系
         self.pc_stride     = int(rospy.get_param("~pc_stride", 1))     # 采样步长，=1表示逐像素
@@ -55,14 +68,14 @@ class BasePolicyNode(object):
 
         self.ts = ApproximateTimeSynchronizer(
             [self.odom_sub, self.rgb_sub, self.depth_sub],
-            queue_size=45, slop=0.1, allow_headerless=False
+            queue_size=45, slop=0.2, allow_headerless=True
         )
         self.ts.registerCallback(self.synced_callback)
         rospy.loginfo('message_filters 同步器已启动')
 
         # 额外订阅一次性相机内参（ROS1 用 rospy.Subscriber）
         self.depth_info_sub = rospy.Subscriber(
-            'camera1/camera_info', CameraInfo, self.depth_info_callback, queue_size=1
+            'camera/depth/info', CameraInfo, self.depth_info_callback, queue_size=1
         )
 
         # 发布当前机器人状态
@@ -76,16 +89,18 @@ class BasePolicyNode(object):
             return self.frame
 
     def synced_callback(self, odom_msg: Odometry,
-                        rgb_msg: CompressedImage,
-                        depth_msg: CompressedImage):
+                        rgb_msg: Image,
+                        depth_msg: Image):
+        # print(11111111111111111)
+
         # 1) 解码图像
-        np_arr = np.frombuffer(rgb_msg.data, np.uint8)
-        cv_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        cv_image = self.bridge.imgmsg_to_cv2(rgb_msg, desired_encoding="bgr8")
+        depth = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding="passthrough")
+
+        if cv_image is None or depth is None:
+            return
+
         rgb_image = cv_image.copy()
-
-        np_arr = np.frombuffer(depth_msg.data, np.uint8)
-        depth = cv2.imdecode(np_arr, cv2.IMREAD_UNCHANGED)
-
         # 假设深度编码：8bit 0..255 -> 0..10 m
         if depth.ndim == 3:
             depth_m = depth[:, :, 0]
@@ -96,7 +111,9 @@ class BasePolicyNode(object):
 
         # print(f"depth信息：{depth_32}")
         depth_32[depth_32 < 1e-6] = 5.1
+        # print(f"depth:{depth_32}, shape of depth:{depth_32.shape}")
         depth_image = depth_32.copy()
+
         # 2) 读取（相机=里程计坐标）世界位姿
         pos = odom_msg.pose.pose.position
         ori = odom_msg.pose.pose.orientation
@@ -112,7 +129,6 @@ class BasePolicyNode(object):
                                         roll_c, pitch_c, yaw_c], dtype=np.float64)
         current_state = np.array([p_w_robot[0], p_w_robot[1], p_w_robot[2],
                                     roll_c, pitch_c, yaw_c], dtype=np.float64)
-
 
         stamp = odom_msg.header.stamp.to_sec()
 
@@ -130,8 +146,8 @@ class BasePolicyNode(object):
         if self.depth_info is None:
             self.depth_info = {
                 'height': msg.height, 'width': msg.width,
-                'fx': msg.K[0], 'fy': msg.K[4],
-                'cx': msg.K[2], 'cy': msg.K[5],
+                'fx': 603.1439208984375, 'fy': 602.61083984375,
+                'cx': 326.0789794921875, 'cy': 602.61083984375,
                 'fov': 57.0
             }
             self.depth_info_sub.unregister()
@@ -261,18 +277,37 @@ class BasePolicyNode(object):
         输入：检测结果(像素 u,v)、帧快照
         输出：像素在世界系中的三维坐标 P_w 及是否需要重规划 replan
         """
-        if self.depth_info is None:
-            raise ValueError("相机参数未就绪")
+        # if self.depth_info is None:
+        #     raise ValueError("相机参数未就绪")
+        # if self.if_yaw:
+        #     print("执行旋转逻辑")
+        #     current_state = self.frame.current_state  # np.array([x, y, z, roll, pitch, yaw])
+        #     dis = 0.2                                 # 前进距离 0.2m
 
+        #     # 拆分当前状态
+        #     x, y, z, roll, pitch, yaw = current_state
+        #     # 新的朝向
+        #     new_yaw = yaw - self.result.get("yaw", 0.0) / 180.0 * math.pi
+        #     # 沿着 new_yaw 方向前进 dis 米
+        #     new_x = x + dis * math.cos(new_yaw)
+        #     new_y = y + dis * math.sin(new_yaw)
+        #     new_z = z  # 高度不变
+        #     # 生成 waypoint，保持和 current_state 一样的格式
+        #     waypoint = np.array([new_x, new_y, new_z, roll, pitch, new_yaw], dtype=np.float64)
+        #     return waypoint, False
+        # result_yaw = results.get("yaw", 0.0) / 180.0 * math.pi
+        # if abs(result_yaw) < 1e-6 and results["pos"] == [-1, -1]:
+        #     return None, False
+        # yaw = yaw - results.get("yaw", 0.0) / 180.0 * math.pi
+        # if results["pos"] == [-1, -1]:
+        #     P_w = [frame.current_state[0], frame.current_state[1], frame.current_state[2]]
+        #     P_w_full = np.concatenate([P_w, np.array([roll, pitch, yaw], dtype=np.float64)])
+        #     replan = False
+        #     return P_w_full, replan
         replan = False
         roll, pitch, yaw = map(float, frame.current_state[3:6].tolist())
-        yaw = yaw - results.get("yaw", 0.0) / 180.0 * math.pi
-        if results["pos"] == [-1, -1]:
-            P_w = [frame.current_state[0], frame.current_state[1], frame.current_state[2]]
-            P_w_full = np.concatenate([P_w, np.array([roll, pitch, yaw], dtype=np.float64)])
-            replan = False
-            return P_w_full, replan
 
+        # print(f"kaishi:{self.depth_info}")
         # ---------- 0) 读入像素与相机参数 ----------
         u, v = float(results["pos"][0]), float(results["pos"][1])
         fx, fy, cx, cy = (self.depth_info['fx'], self.depth_info['fy'],
@@ -290,7 +325,6 @@ class BasePolicyNode(object):
         ui, vi = int(round(u)), int(round(v))
         if not (0 <= ui < W and 0 <= vi < H):
             raise ValueError(f"(u,v)=({ui},{vi}) 超出图像范围 {W}x{H}")
-        # pdb.set_trace()
 
         # ---------- 1) 获取深度 ----------
         if window > 0:
@@ -305,10 +339,7 @@ class BasePolicyNode(object):
             replan = True
             depth_raw = 5.0
         print(f"depth:{depth_raw}")
-        if depth_raw > 1.0 + 1e-6:
-            depth_val = (depth_raw - 0.6) * depth_scale
-        else:
-            depth_val = depth_raw * depth_scale
+        depth_val = (depth_raw - 0.6) * depth_scale
         if not np.isfinite(depth_val) or depth_val <= 0:
             raise ValueError(f"无效深度 depth={depth_val}")
 
@@ -321,6 +352,7 @@ class BasePolicyNode(object):
         else:
             fov_info = self.depth_info['fov']
             P_opt = self._backproject_from_fov(u, v, depth_val, W, H, fov_info, mode=depth_mode)
+
         # ---------- 3) 光学系→相机机体系（x前、y左、z上） ----------
         R_opt2cam = np.array([
             [ 0,  0,  1],   # x_cam =  z_opt

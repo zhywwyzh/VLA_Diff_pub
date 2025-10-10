@@ -1,0 +1,130 @@
+from openai import OpenAI
+import cv2
+import base64
+import re
+import json
+# from utils.vlm.prompt import USER3, ASSISTANT3
+import os
+
+os.environ.pop("HTTP_PROXY", None)
+os.environ.pop("HTTPS_PROXY", None)
+os.environ.pop("ALL_PROXY", None)
+os.environ.pop("http_proxy", None)
+os.environ.pop("https_proxy", None)
+os.environ.pop("all_proxy", None)
+
+# 初始化客户端
+client = OpenAI(api_key='EMPTY', base_url='http://127.0.0.1:9000/v1')
+
+def open_serve(img_first, img_cur, input1):
+    """
+    传入 OpenCV 读取的图像对象，返回模型识别出的红杯子像素坐标(JSON格式)。
+    
+    参数:
+        img: OpenCV 读取的 BGR 图像 (numpy.ndarray)
+    
+    返回:
+        模型返回的 JSON 字符串或解析后的 Python 对象
+    """
+    finish_mission = False
+    # input = "door"
+    # 将图像编码为base64
+    _, buffer_first = cv2.imencode('.jpg', img_first)
+    img_first_base64 = base64.b64encode(buffer_first).decode('utf-8')
+    data_url_first = f'data:image/jpeg;base64,{img_first_base64}'
+
+    _, buffer_cur = cv2.imencode('.jpg', img_cur)
+    img_cur_base64 = base64.b64encode(buffer_cur).decode('utf-8')
+    data_url_cur = f'data:image/jpeg;base64,{img_cur_base64}'
+
+    # 获取模型名称
+    model_name = client.models.list().data[0].id
+
+    input2 = input1.replace("前往", "").strip()
+
+    input = f"""
+        <image>
+        <image>
+        你将得到首次观察rgb图像、当前观察的rgb图像。
+        当前任务是{input1}，
+        请给出{input2}的bounding box。
+        另外根据首次观察的rgb图像，判断当前观察的rgb图像，判断任务是否完成。
+        输出mission finish的状态。
+        最终按照json格式{{"bbox_2d": [x1, y1, x2, y2], "mission_finish": *}}输出。
+        """
+
+    # 构造请求
+    response = client.chat.completions.create(
+        model=model_name,
+        messages=[
+            {
+                'role': 'user',
+                'content': [{
+                    'type': 'text',
+                    'text':f'{input}'
+                }, {
+                    'type': 'image_url',
+                    'image_url': {
+                        'url': data_url_first,
+                    },
+                }, {
+                    'type': 'image_url',
+                    'image_url': {
+                        'url': data_url_cur,
+                    },
+                },
+                ],
+        }],
+        temperature=0.8,
+        top_p=0.8
+    )
+
+    # 返回内容部分
+    # 获取字符串内容
+    content = response.choices[0].message.content
+    print(f"模型返回内容: {content}")
+
+    data = json.loads(content)
+    # result = {
+    #     "pos": data.get("pos", [-1, -1]),
+    #     "yaw": data.get("yaw", 0.0),
+    # }
+    reuslt = []
+    finish_mission = data.get("mission_finish", False)
+
+    json_match = re.search(r'\{.*\}', content)
+    if json_match:
+        bbox_data = json.loads(json_match.group())
+        bbox = bbox_data['bbox_2d']
+    else:
+        # 如果直接是json字符串
+        bbox_data = json.loads(content)
+        bbox = bbox_data['bbox_2d']
+
+    x1, y1, x2, y2 = bbox
+    center_x = int((x1 + x2) / 2)
+    center_y = int((y1 + y2) / 2)
+
+    result = {
+    "pos": [center_x, center_y]
+    }
+
+    # 转成 Python 对象
+    try:
+        # return json.loads(json_str)
+        return result, finish_mission
+    except json.JSONDecodeError:
+        raise ValueError(f"模型返回的JSON解析失败: {content}")
+
+# 使用示例
+if __name__ == "__main__":
+    img_path = '/home/diff/workspace/VLA_Diff/camera0_00005.jpg'
+    cmd = "给我前方白色柱子的像素坐标"
+    img = cv2.imread(img_path)
+    result = open_serve(img,cmd)
+    print(result)
+
+# vllm serve /home/zhywwyzh/workspace/LLaMA-Factory/output/3dgs/7B/full_sft_all_unfreeze_gptq --dtype auto --port 9000 --max-model-len 4096 --gpu-memory-utilization 0.8
+# CUDA_VISIBLE_DEVICES=6 vllm serve /vla/LLaMA-Factory/vla-sft/output/full/sft_rounded --dtype auto --port 8000 --max-model-len 4096 --gpu-memory-utilization 0.8
+
+# CUDA_VISIBLE_DEVICES=6 vllm serve /home/zhywwyzh/workspace/LLaMA-Factory/output/sft_rounded_awq --dtype auto --port 8000 --max-model-len 4096 --gpu-memory-utilization 0.8
