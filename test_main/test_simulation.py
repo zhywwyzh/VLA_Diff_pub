@@ -497,6 +497,7 @@ class UAVPolicyNode(BasePolicyNode):
                                 # rospy.loginfo("当前pos_offset欧式距离: "f"{np.linalg.norm(pos_offset):.2f}m，小于0.4m，视为到达目的地")
                                 self.finish_command = True
                                 self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+                                continue
 
                             self.vla_state = VLA_STATE.PUBLISH
 

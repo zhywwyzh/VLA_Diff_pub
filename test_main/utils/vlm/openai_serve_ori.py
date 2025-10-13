@@ -82,7 +82,7 @@ def open_serve(img_first, img_cur, input1):
     # 返回内容部分
     # 获取字符串内容
     content = response.choices[0].message.content
-    print(f"模型返回内容: {content}")
+    # print(f"模型返回内容: {content}")
 
     data = json.loads(content)
     # result = {
@@ -112,7 +112,7 @@ def open_serve(img_first, img_cur, input1):
     # 转成 Python 对象
     try:
         # return json.loads(json_str)
-        return result, finish_mission
+        return bbox, result, finish_mission
     except json.JSONDecodeError:
         raise ValueError(f"模型返回的JSON解析失败: {content}")
 
