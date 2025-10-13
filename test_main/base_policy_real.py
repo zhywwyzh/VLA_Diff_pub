@@ -313,7 +313,7 @@ class BasePolicyNode(object):
         fx, fy, cx, cy = (self.depth_info['fx'], self.depth_info['fy'],
                           self.depth_info['cx'], self.depth_info['cy'])
 
-        print(f"fx:{fx}, fy:{fy}, cx:{cx}, cy:{cy}")
+        # print(f"fx:{fx}, fy:{fy}, cx:{cx}, cy:{cy}")
 
         # pdb.set_trace()
         # 方向（OpenCV 光学系：x右、y下、z前）

@@ -278,7 +278,7 @@ class BasePolicyNode(object):
         fx, fy, cx, cy = (self.depth_info['fx'], self.depth_info['fy'],
                           self.depth_info['cx'], self.depth_info['cy'])
 
-        print(f"fx:{fx}, fy:{fy}, cx:{cx}, cy:{cy}")
+        # print(f"fx:{fx}, fy:{fy}, cx:{cx}, cy:{cy}")
 
         # pdb.set_trace()
         # 方向（OpenCV 光学系：x右、y下、z前）
@@ -304,7 +304,7 @@ class BasePolicyNode(object):
         if depth_raw > 5.0 + 1e-6:  # 哨兵值逻辑
             replan = True
             depth_raw = 5.0
-        print(f"depth:{depth_raw}")
+        # print(f"depth:{depth_raw}")
         if depth_raw > 1.0 + 1e-6:
             depth_val = (depth_raw - 0.6) * depth_scale
         else:
@@ -312,7 +312,7 @@ class BasePolicyNode(object):
         if not np.isfinite(depth_val) or depth_val <= 0:
             raise ValueError(f"无效深度 depth={depth_val}")
 
-        print(f"深度为:{depth_val}")
+        # print(f"深度为:{depth_val}")
 
         # ---------- 2) 像素→相机光学系 ----------
         if self.use_intrinsics:

@@ -19,6 +19,8 @@ ai2thor
 unity
 pipeline/
 .vscode
+output
+own_tools
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
