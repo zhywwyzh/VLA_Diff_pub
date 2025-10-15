@@ -14,7 +14,7 @@
 
     <!-- 渲染/裁剪相关参数 -->
     <param name="enable_downsample" value="false"/>
-    <param name="leaf_size" value="0.05"/>
+    <param name="leaf_size" value="0.1"/>
     <param name="use_cropbox" value="false"/>
     <param name="frustum_culling" value="false"/>
     <param name="render_stride" value="1"/>
@@ -52,12 +52,12 @@
 
     <!-- Unity->ROS -->
     <!-- <rosparam param="unity_pos">[13.41, 0.1458275, 0.23]</rosparam>
-    <rosparam param="unity_rot_deg">[90.141, -0.9069977, -55.251]</rosparam>
     <rosparam param="unity_scale">[6.421318, -6.421318, -6.421318]</rosparam> -->
+    <!-- <rosparam param="unity_rot_deg">[-90, 90, 0]</rosparam> -->
 
     <rosparam param="unity_pos">[0,0,0]</rosparam>
-    <rosparam param="unity_rot_deg">[0,0,0]</rosparam>
-    <rosparam param="unity_scale">[1, 1, 1]</rosparam>
+    <rosparam param="unity_rot_deg">[0,0,90]</rosparam>
+    <rosparam param="unity_scale">[-1, 1, 1]</rosparam>
 
     <!-- 频率与下采样 -->
     <param name="depth_rate_hz" value="30.0" />
