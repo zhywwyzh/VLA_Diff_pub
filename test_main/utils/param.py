@@ -12,7 +12,7 @@ class COMMAND_TYPE:
 
 class VLA_STATE:
     INIT = 0
-    WAIT = 1
+    WAIT_FOR_MISSION = 1
     PLAN = 2
     PUBLISH = 3
     WAIT_ACTION_FINISH = 4
@@ -22,5 +22,4 @@ class VLA_STATE:
     GO_ORIGIN = 8
     REPLY_MLLM = 9
     EGO_FINISH = 10
-    GET_PRE = 11
 
