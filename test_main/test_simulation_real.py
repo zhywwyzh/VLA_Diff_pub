@@ -47,33 +47,30 @@ class UAVPolicyNode(BasePolicyNode):
         self.last_plan_time = None
         self.inference_timeout = 5.0
         self.last_command = None
-        self.first_mission_frame = None
+        self.first_rgb = None
         self.prepare_content = [
             "请原地右转90度",
             "前往最近的椅子",
             "请原地左转60度",
             "前往黄色架子第二层",
             "请原地左转90度"
-            # "请原地右转90度",
-            # "前往最近的白色柱子"
             ]
         self.command_content = []
         self.content = self.prepare_content.copy()
+        # self.pre_prompt = self.prepare_content
+        # self.pre_prompt.append("完成任务")
         self.pre_prompt = [
             "请原地右转90度",
             "前往最近的椅子",
             "请原地左转60度",
             "前往黄色架子第二层",
-            "请原地左转90度"
-            # "请原地右转90度",
-            # "前往最近的白色柱子"
+            "请原地左转90度",
             "完成任务"
-            ]
+        ]
         self.prompt_bf = self.pre_prompt.copy()
         self.replan_time = [0, 0, 0, 0, 0, 0, 0]
         self.replan_bf = self.replan_time.copy()
         self.replan_content = None
-        self.replan = False
         self.task_id = [1, 2, 2, 1]
         self.command_type = COMMAND_TYPE.WAIT
         self.task_id_mllm = []
@@ -92,7 +89,7 @@ class UAVPolicyNode(BasePolicyNode):
         self.is_label = False
         self.bridge = CvBridge()
         self.bbox = [0, 0, 0, 0]
-        self.first_bbox = False
+        self.first_bbox = []
         # TODO 限制重规划次数，需要删除
         self.replan_count = 0
 
@@ -192,8 +189,8 @@ class UAVPolicyNode(BasePolicyNode):
             case COMMAND_TYPE.RESTART:
                 print("🔄 收到重启指令，重新初始化")
                 self.command_content = []
-                self.first_mission_frame = self.frame.rgb_image.copy()
-                self.vla_state = VLA_STATE.WAIT
+                self.first_rgb = self.frame.rgb_image.copy()
+                self.vla_state = VLA_STATE.WAIT_FOR_MISSION
 
             case COMMAND_TYPE.GET_PRE:
                 rospy.loginfo("收到 GET_PRE 指令，准备执行任务")
@@ -242,12 +239,62 @@ class UAVPolicyNode(BasePolicyNode):
         self.vla_state = VLA_STATE.PLAN
         # rospy.loginfo(f"✅ 收到完整 content 消息: {msg.data}")
 
+    def calculate_plan_yaw(self, first_waypoint, first_frame, current_frame, over_edge):
+        """计算规划的航向角"""
+        if first_waypoint is None or first_frame is None or current_frame is None:
+            rospy.logwarn("计算航向角时缺少必要参数")
+            return
+        
+        # 提取当前位置和第一次判断时的位置
+        current_pos = current_frame.current_state[:3]  # [x, y, z]
+        first_pos = first_frame.current_state[:3]      # [x, y, z]
+        target_pos = np.array(first_waypoint[:3])     # [x, y, z]
+        
+        if not over_edge:
+            # 情况1：物体未超出极限范围，直接朝向目标点
+            direction_vector = target_pos - current_pos
+            target_yaw = math.atan2(direction_vector[1], direction_vector[0])
+            rospy.loginfo("物体未超出范围，直接朝向目标点")
+        else:
+            # 情况2：物体超出极限范围，朝向两条射线的角平分线
+            ray1 = target_pos - first_pos
+            ray1_yaw = math.atan2(ray1[1], ray1[0])
+            
+            ray2 = target_pos - current_pos
+            ray2_yaw = math.atan2(ray2[1], ray2[0])
+            
+            angle_diff = ray2_yaw - ray1_yaw
+            
+            while angle_diff > math.pi:
+                angle_diff -= 2 * math.pi
+            while angle_diff < -math.pi:
+                angle_diff += 2 * math.pi
+            
+            target_yaw = ray1_yaw + angle_diff / 2
+            
+            rospy.loginfo(f"物体超出范围，朝向角平分线方向")
+        
+        target_yaw = (target_yaw + math.pi) % (2 * math.pi) - math.pi
+        
+        new_waypoint = np.array([
+            current_pos[0],
+            current_pos[1], 
+            current_pos[2],
+            0.0,
+            0.0,
+            target_yaw
+        ], dtype=np.float64)
+        
+        rospy.loginfo(f"计算得到目标航向角: {math.degrees(target_yaw):.1f}°")
+        
+        return new_waypoint
+
     # TODO 调整ego回调逻辑
     def ego_state_trigger_callback(self, msg: Bool):
         """处理ego_state_trigger回调"""
         print("收到 ego_state_trigger 信号")
         self.ego_state_trigger = msg.data
-        self.vla_state = VLA_STATE.EGO_FINISH
+        # self.vla_state = VLA_STATE.EGO_FINISH
 
     # TODO 修改提取方案
     def get_command_content(self):
@@ -390,12 +437,12 @@ class UAVPolicyNode(BasePolicyNode):
                 case VLA_STATE.INIT:
                     if getattr(self, 'depth_info', None) and self.get_frame_snapshot() is not None:
                         print("初始化完成")
-                        self.vla_state = VLA_STATE.WAIT
+                        self.vla_state = VLA_STATE.WAIT_FOR_MISSION
                     else:
                         rate.sleep()
                         continue
 
-                case VLA_STATE.WAIT:
+                case VLA_STATE.WAIT_FOR_MISSION:
                     if not self.command_content:
                         # self.vla_state = VLA_STATE.FINISH
                         # rospy.loginfo("当前任务为空，请传入下一步任务")
@@ -404,7 +451,7 @@ class UAVPolicyNode(BasePolicyNode):
 
                 case VLA_STATE.REPLY_MLLM:
                     # rospy.loginfo("到达目的地，基于MLLM回复")
-                    self.vla_state = VLA_STATE.WAIT
+                    self.vla_state = VLA_STATE.WAIT_FOR_MISSION
                     # response = self.publish_client.send_image(self.frame.rgb_image)
                     # rospy.loginfo(f"当前帧接收状态: {response['message']}")
                     continue
@@ -420,7 +467,9 @@ class UAVPolicyNode(BasePolicyNode):
                         if self.finish_mission:
                             print("上一任务完成，执行下一任务")
                             self.finish_mission = False
-                            self.first_mission_frame = self.frame.rgb_image.copy()
+                            self.first_rgb = self.frame.rgb_image.copy()
+                            self.first_bbox = []
+                            self.first_frame = None
 
                         cmd = self.command_content[0]
 
@@ -464,14 +513,15 @@ class UAVPolicyNode(BasePolicyNode):
                             self.is_label = True
                             if not self.first_plan:
                                 self.first_plan = True
-                                self.first_mission_frame = self.frame.rgb_image.copy()
-                                self.first_bbox = True
-                            # TODO 待修改vlm输出信息结构
-                            self.publish_image(self.first_mission_frame, self.first_image_pub)
+                                self.first_rgb = self.frame.rgb_image.copy()
+                                self.first_bbox = []
+                                self.first_frame = None
+                            self.publish_image(self.first_rgb, self.first_image_pub)
                             self.publish_image(self.frame.rgb_image, self.current_image_pub)
                             origin_time = time.time()
                             rgb_image = self.frame.rgb_image
-                            self.bbox, self.result, self.finish_mission = open_serve(self.first_mission_frame, self.frame.rgb_image, cmd)
+                            current_frame = self.frame
+                            self.bbox, self.result, self.finish_mission = open_serve(self.first_rgb, current_frame.rgb_image, cmd)
                             # 发布bbox图像
                             pt1 = (int(self.bbox[0]), int(self.bbox[1]))
                             pt2 = (int(self.bbox[2]), int(self.bbox[3]))
@@ -483,31 +533,34 @@ class UAVPolicyNode(BasePolicyNode):
                             # print(f"像素中心位于：{self.result}")
                             rospy.loginfo(f"推理耗时: {time.time() - origin_time:.2f} 秒")
                             # pdb.set_trace()
-                            waypoint, self.replan = self.pixel_to_world(self.result, self.frame)
+                            waypoint = self.pixel_to_world(self.result, self.frame)
+                            if self.first_frame is None:
+                                self.first_frame = current_frame
+                                self.first_bbox = self.bbox
 
                             rospy.loginfo(f"任务完成状态: {self.finish_mission}")
 
-                            self.waypoint = waypoint
 
                             # TODO 限制重规划次数，需要删除
                             self.replan_count += 1
-                            if self.replan_count > 3:
-                                self.replan_count = 0
-                                self.finish_mission = True
+                            # if self.replan_count > 3:
+                            #     self.replan_count = 0
+                            #     self.finish_mission = True
 
                             if self.finish_mission:
-                                # self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
-                                # rospy.loginfo("当前pos_offset欧式距离: "f"{np.linalg.norm(pos_offset):.2f}m，小于0.4m，视为到达目的地")
-                                # self.finish_command = True
-                                self.command_content.pop(0)
-                                # self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
-                                # continue
+                                self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+                                self.finish_command = True                                
+                                # self.command_content.pop(0)
+                                self.waypoint = self.calculate_plan_yaw(self.first_waypoint, self.first_frame, current_frame, self.over_edge)
+                                self.if_yaw = True
+                                continue
 
+                            self.waypoint = waypoint
                             self.vla_state = VLA_STATE.PUBLISH
 
                         else:
                             rospy.logwarn(f"收到未知指令：{cmd}，请检查指令格式")
-                            self.vla_state = VLA_STATE.WAIT
+                            self.vla_state = VLA_STATE.WAIT_FOR_MISSION
 
                         self.last_plan_time = rospy.Time.now()
 
@@ -520,10 +573,10 @@ class UAVPolicyNode(BasePolicyNode):
                         rospy.logwarn("没有有效的导航点，将重新规划")
                         self.vla_state = VLA_STATE.PLAN
                         continue
-                    if self.finish_mission:
-                        self.finish_command = True
-                        time.sleep(1)
-                        continue
+                    # self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+                    # if self.finish_mission:
+                    #     self.finish_command = True
+                    #     continue
 
                     self.publish_action(waypoint)
                     self.command_content.pop(0)
@@ -532,8 +585,14 @@ class UAVPolicyNode(BasePolicyNode):
                     print(f"发布导航点: {[round(x, 2) for x in waypoint]}\n")
                     self.last_state = np.array([waypoint[0], waypoint[1], waypoint[2], 0, 0, 0], dtype=np.float64)
                     # time.sleep(0.5)  # 等待动作发布完成
+
                 case VLA_STATE.WAIT_ACTION_FINISH:
-                    # self.frame = self.get_frame_snapshot()
+                    # self.frame = self.get_frame_snapshot()                    
+                    if self.ego_state_trigger:
+                        # print(f"当前ego_state_trigger状态: {self.ego_state_trigger}")
+                        self.vla_state = VLA_STATE.EGO_FINISH
+                        self.ego_state_trigger = False
+                        continue
                     time.sleep(0.1)
                     continue
 
@@ -550,7 +609,7 @@ class UAVPolicyNode(BasePolicyNode):
                 case VLA_STATE.ERROR:
                     rospy.logerr("发生错误，等待正确指令")
                     time.sleep(1)
-                    self.vla_state = VLA_STATE.WAIT
+                    self.vla_state = VLA_STATE.WAIT_FOR_MISSION
 
                 case VLA_STATE.GO_ORIGIN:
                     rospy.loginfo("收到 GO_ORIGIN 指令")
@@ -578,7 +637,6 @@ class UAVPolicyNode(BasePolicyNode):
                         self.finish_mission = False
                         self.ego_state_trigger = False
                         self.go_origin = False
-                    rospy.loginfo(f"任务情况：{self.finish_command}")
                     if self.finish_command:
                         print("当前任务完成，执行尾部动作")
                         if self.if_yaw:
@@ -588,7 +646,7 @@ class UAVPolicyNode(BasePolicyNode):
                             self.if_yaw = False
                             continue
                         # else:
-                        time.sleep(3)
+                        # time.sleep(1)
                         self.vla_state = VLA_STATE.REPLY_MLLM
                         type_msg = Int32()
                         type_msg.data = 8

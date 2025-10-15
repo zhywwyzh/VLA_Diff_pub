@@ -38,6 +38,9 @@ class BasePolicyNode(object):
         self.safe_dis = 0.6
         self.use_intrinsics = True
         self.depth_scale_param = 57.0
+        self.first_frame = None
+        self.first_waypoint = None
+        self.over_edge = False
 
         # message_filters 同步订阅
         self.odom_sub  = MFSubscriber('/unity_odom', Odometry, queue_size=10)
@@ -261,17 +264,15 @@ class BasePolicyNode(object):
         输入：检测结果(像素 u,v)、帧快照
         输出：像素在世界系中的三维坐标 P_w 及是否需要重规划 replan
         """
+        over_edge = False
         if self.depth_info is None:
             raise ValueError("相机参数未就绪")
-
-        replan = False
         roll, pitch, yaw = map(float, frame.current_state[3:6].tolist())
         yaw = yaw - results.get("yaw", 0.0) / 180.0 * math.pi
         if results["pos"] == [-1, -1]:
             P_w = [frame.current_state[0], frame.current_state[1], frame.current_state[2]]
             P_w_full = np.concatenate([P_w, np.array([roll, pitch, yaw], dtype=np.float64)])
-            replan = False
-            return P_w_full, replan
+            return P_w_full
 
         # ---------- 0) 读入像素与相机参数 ----------
         u, v = float(results["pos"][0]), float(results["pos"][1])
@@ -302,7 +303,7 @@ class BasePolicyNode(object):
             depth_raw = float(frame.depth_image[vi, ui])
 
         if depth_raw > 5.0 + 1e-6:  # 哨兵值逻辑
-            replan = True
+            over_edge = True
             depth_raw = 5.0
         # print(f"depth:{depth_raw}")
         if depth_raw > 1.0 + 1e-6:
@@ -354,7 +355,11 @@ class BasePolicyNode(object):
         P_w = (R_w_cam @ P_cam.T).T + t_wc  # [N,3]
         P_w_full = np.concatenate([P_w, np.array([roll, pitch, yaw], dtype=np.float64)])
         self._publish_p2w_marker(P_w_full, frame.stamp)
-        return P_w_full, replan
+        if self.first_frame is None:
+            self.first_waypoint = P_w_full
+            self.first_depth = depth_raw
+            self.over_edge = over_edge
+        return P_w_full
 
     def calculate_posture(self, current_state, delta_yaw):
         """计算姿态"""

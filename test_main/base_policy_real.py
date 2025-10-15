@@ -39,7 +39,8 @@ class BasePolicyNode(object):
         self.safe_dis = 0.6
         self.use_intrinsics = True
         self.depth_scale_param = 57.0
-        
+        self.first_frame = None
+
         self.depth_info = {
                 'height': 640, 'width': 480,
                 'fx': 603.1439208984375, 'fy': 602.61083984375,
