@@ -1,6 +1,9 @@
-vllm serve /home/zhywwyzh/workspace/LLaMA-Factory/output/3dgs/7B/full_sft_all_unfreeze_shuffle_fix_mission_awq \
+export CUDA_VISIBLE_DEVICES=0
+
+vllm serve /home/zhywwyzh/workspace/VLA_Diff/output/3dgs/7B/new/mission_sharegpt_oreder_shuffle_awq \
   --dtype auto \
   --port 9000 \
-  --max-model-len 4096 \
-  --gpu-memory-utilization 0.8 \
-  --max-num-seqs 1
+  --max-model-len 3000 \
+  --gpu-memory-utilization 0.6 \
+  --max-num-seqs 1 \
+  --enforce-eager

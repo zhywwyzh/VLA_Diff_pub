@@ -14,4 +14,5 @@ unset AMENT_PREFIX_PATH
 unset COLCON_PREFIX_PATH
 source /opt/ros/noetic/setup.bash
 source /home/zhywwyzh/workspace/VLA_Diff/Openpi/.venv/bin/activate
+source /home/zhywwyzh/workspace/VLA_Diff/simulation/ros_utils2/devel/setup.bash
 source /home/zhywwyzh/workspace/VLA_Diff/simulation/EGO-Planner-v3/devel/setup.bash
