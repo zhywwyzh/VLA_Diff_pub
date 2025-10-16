@@ -95,7 +95,7 @@ class BasePolicyNode(object):
         else:
             depth_m = depth
 
-        depth_32 = (255.0 - depth_m.astype(np.float32)) / 255.0 * 5.0
+        depth_32 = (depth_m.astype(np.float32)) / 255.0 * 5.0
 
         # print(f"depth信息：{depth_32}")
         depth_32[depth_32 < 1e-6] = 5.1
@@ -259,7 +259,8 @@ class BasePolicyNode(object):
             raise ValueError(f"Unknown depth mode: {mode}")
 
     def pixel_to_world(self, results, frame: Frame,
-                       depth_scale=1.0, window=0, depth_mode="z"):
+                       depth_scale=1.0, window=0, depth_mode="z", 
+                       avg_depth=True, percent_point=0.2, use_median=True):
         """
         输入：检测结果(像素 u,v)、帧快照
         输出：像素在世界系中的三维坐标 P_w 及是否需要重规划 replan
@@ -294,13 +295,53 @@ class BasePolicyNode(object):
         # pdb.set_trace()
 
         # ---------- 1) 获取深度 ----------
-        if window > 0:
-            u0, u1 = max(0, ui - window), min(W - 1, ui + window)
-            v0, v1 = max(0, vi - window), min(H - 1, vi + window)
-            patch = frame.depth_image[v0:v1+1, u0:u1+1].astype(np.float64)
-            depth_raw = np.median(patch)
+        if avg_depth:
+            # 使用 avg_depth 逻辑：从 bbox 区域提取有效深度点
+            if "bbox" not in results:
+                rospy.logwarn("avg_depth=True 但 results 中缺少 bbox 信息")
+                depth_raw = 0.0
+            else:
+                bbox = results["bbox"]  # [x1, y1, x2, y2]
+                x1, y1, x2, y2 = bbox
+                
+                # 确保 bbox 在图像范围内
+                x1 = max(0, min(x1, W - 1))
+                x2 = max(0, min(x2, W - 1))
+                y1 = max(0, min(y1, H - 1))
+                y2 = max(0, min(y2, H - 1))
+                
+                # 提取 bbox 区域的深度图
+                bbox_depth = frame.depth_image[y1:y2+1, x1:x2+1].astype(np.float64)
+                
+                # 找到有效点（深度小于 5.0 - 1e-6）
+                valid_mask = (bbox_depth < 5.0 - 1e-6) & (bbox_depth > 1e-6)
+                valid_depths = bbox_depth[valid_mask]
+                
+                if len(valid_depths) == 0:
+                    rospy.logwarn("bbox 区域内没有有效深度点")
+                    depth_raw = 5.0
+                else:
+                    # 排序找到最小的 percent_point 比例的点
+                    valid_depths_sorted = np.sort(valid_depths)
+                    num_points = max(1, int(len(valid_depths_sorted) * percent_point))
+                    selected_depths = valid_depths_sorted[:num_points]
+                    
+                    # True: 中位数, False: 平均值
+                    if use_median:
+                        depth_raw = np.median(selected_depths)
+                    else:
+                        depth_raw = np.mean(selected_depths)
+                    
+                    rospy.loginfo(f"bbox 区域内有效点数: {len(valid_depths)}, 选取点数: {num_points}, 深度值: {depth_raw:.3f}")
         else:
-            depth_raw = float(frame.depth_image[vi, ui])
+            # 中心点附近取窗口
+            if window > 0:
+                u0, u1 = max(0, ui - window), min(W - 1, ui + window)
+                v0, v1 = max(0, vi - window), min(H - 1, vi + window)
+                patch = frame.depth_image[v0:v1+1, u0:u1+1].astype(np.float64)
+                depth_raw = np.median(patch)
+            else:
+                depth_raw = float(frame.depth_image[vi, ui])
 
         if depth_raw > 5.0 + 1e-6:  # 哨兵值逻辑
             over_edge = True
@@ -313,7 +354,7 @@ class BasePolicyNode(object):
         if not np.isfinite(depth_val) or depth_val <= 0:
             raise ValueError(f"无效深度 depth={depth_val}")
 
-        # print(f"深度为:{depth_val}")
+        print(f"深度为:{depth_val}")
 
         # ---------- 2) 像素→相机光学系 ----------
         if self.use_intrinsics:
