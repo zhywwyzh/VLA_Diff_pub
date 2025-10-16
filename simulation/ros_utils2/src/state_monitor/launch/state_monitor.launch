@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="state_monitor" name="state_monitor_node" type="state_monitor_node" output="screen">
+    </node>
+</launch>

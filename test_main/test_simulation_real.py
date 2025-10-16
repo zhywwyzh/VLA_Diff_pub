@@ -54,6 +54,9 @@ class UAVPolicyNode(BasePolicyNode):
             "请原地左转60度",
             "前往黄色架子第二层",
             "请原地左转90度"
+            "前往黄色大柜子",
+            "前往白色柱子",
+            "请原地右转90度"
             ]
         self.command_content = []
         self.content = self.prepare_content.copy()
@@ -65,6 +68,9 @@ class UAVPolicyNode(BasePolicyNode):
             "请原地左转60度",
             "前往黄色架子第二层",
             "请原地左转90度",
+            "前往黄色大柜子",
+            "前往白色柱子",
+            "请原地右转90度",
             "完成任务"
         ]
         self.prompt_bf = self.pre_prompt.copy()
@@ -143,6 +149,19 @@ class UAVPolicyNode(BasePolicyNode):
             'bbox_mission_image', Image, queue_size=10
         )
 
+        # 发布监控
+        self.monitor_command_type_pub = rospy.Publisher(
+            'monitor/command_type', Int32, queue_size=10
+        )
+        self.monitor_vla_state_pub = rospy.Publisher(
+            'monitor/vla_state', Int32, queue_size=10
+        )
+        self.monitor_timer = rospy.Timer(rospy.Duration(0.1), self.publish_monitor_status)
+
+        self.command_content_pub = rospy.Publisher(
+            "monitor/command_content", String, queue_size=10
+        )
+
         # 初始化 WebSocket / 服务端客户端
         self.client = None
         self.prompt = None
@@ -166,6 +185,22 @@ class UAVPolicyNode(BasePolicyNode):
         self.listener_thread = threading.Thread(target=self.listen_messages, daemon=True)
         self.listener_thread.start()
 
+    def publish_monitor_status(self, event):
+        """定期发布监控状态"""
+        type_msg = Int32()
+        type_msg.data = self.command_type
+        self.monitor_command_type_pub.publish(type_msg)
+
+        state_msg = Int32()
+        state_msg.data = self.vla_state if self.vla_state is not None else -1
+        self.monitor_vla_state_pub.publish(state_msg)
+
+    def publish_command_content(self, command_content):
+        """发布当前指令内容"""
+        content_msg = String()
+        content_msg.data = json.dumps(command_content, ensure_ascii=False)
+        self.command_content_pub.publish(content_msg)
+
     def command_type_callback(self, msg: Int32):
         """处理指令需求回调"""
         self.command_type = msg.data
@@ -173,10 +208,12 @@ class UAVPolicyNode(BasePolicyNode):
 
         match self.command_type:
             case COMMAND_TYPE.NEXT:
+                self.publish_command_content(self.command_content)
                 self.vla_state = VLA_STATE.PLAN
 
             case COMMAND_TYPE.AGAIN:
                 self.command_content.insert(0, self.last_command)
+                self.publish_command_content(self.command_content)
                 self.vla_state = VLA_STATE.PLAN
 
             case COMMAND_TYPE.GO_ORIGIN:
@@ -203,6 +240,7 @@ class UAVPolicyNode(BasePolicyNode):
                     self.replan_content = self.prepare_content.pop(0)
                     # rospy.loginfo(f"接受指令：{self.replan_content}")
                     self.command_content.append(self.replan_content)
+                    self.publish_command_content(self.command_content)
                     self.vla_state = VLA_STATE.PLAN
                     time.sleep(3)
                     # while replan_times > 0:
@@ -212,6 +250,7 @@ class UAVPolicyNode(BasePolicyNode):
                             break
                         if self.is_label:
                             self.command_content.append(self.replan_content)
+                            self.publish_command_content(self.command_content)
                             self.vla_state = VLA_STATE.PLAN
                             time.sleep(3)
                         else:
@@ -236,6 +275,7 @@ class UAVPolicyNode(BasePolicyNode):
         """处理指令内容回调"""
         # 原封不动保存整段文本
         self.command_content.append(msg.data)
+        self.publish_command_content(self.command_content)
         self.vla_state = VLA_STATE.PLAN
         # rospy.loginfo(f"✅ 收到完整 content 消息: {msg.data}")
 
@@ -530,29 +570,27 @@ class UAVPolicyNode(BasePolicyNode):
                             thickness = 4
                             cv2.rectangle(bbox_image, pt1, pt2, color_red_rgb, thickness)
                             self.publish_image(bbox_image, self.bbox_image_pub)
-                            # print(f"像素中心位于：{self.result}")
                             rospy.loginfo(f"推理耗时: {time.time() - origin_time:.2f} 秒")
+                            # print(f"像素中心位于：{self.result}")
                             # pdb.set_trace()
                             waypoint = self.pixel_to_world(self.result, self.frame)
                             if self.first_frame is None:
                                 self.first_frame = current_frame
                                 self.first_bbox = self.bbox
 
-                            rospy.loginfo(f"任务完成状态: {self.finish_mission}")
-
-
                             # TODO 限制重规划次数，需要删除
                             self.replan_count += 1
-                            # if self.replan_count > 3:
-                            #     self.replan_count = 0
-                            #     self.finish_mission = True
+                            if self.replan_count > 3:
+                                self.replan_count = 0
+                                self.finish_mission = True
 
+                            rospy.loginfo(f"任务完成状态: {self.finish_mission}")
                             if self.finish_mission:
                                 self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
                                 self.finish_command = True                                
                                 # self.command_content.pop(0)
-                                self.waypoint = self.calculate_plan_yaw(self.first_waypoint, self.first_frame, current_frame, self.over_edge)
-                                self.if_yaw = True
+                                # self.waypoint = self.calculate_plan_yaw(self.first_waypoint, self.first_frame, current_frame, self.over_edge)
+                                # self.if_yaw = True
                                 continue
 
                             self.waypoint = waypoint
@@ -571,6 +609,7 @@ class UAVPolicyNode(BasePolicyNode):
                 case VLA_STATE.PUBLISH:
                     if waypoint is None:
                         rospy.logwarn("没有有效的导航点，将重新规划")
+                        self.publish_command_content(self.command_content)
                         self.vla_state = VLA_STATE.PLAN
                         continue
                     # self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
