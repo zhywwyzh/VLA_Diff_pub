@@ -89,7 +89,6 @@ def open_serve(img_first, img_cur, input1):
     #     "pos": data.get("pos", [-1, -1]),
     #     "yaw": data.get("yaw", 0.0),
     # }
-    reuslt = []
     finish_mission = data.get("mission_finish", False)
 
     json_match = re.search(r'\{.*\}', content)
@@ -106,7 +105,8 @@ def open_serve(img_first, img_cur, input1):
     center_y = int((y1 + y2) / 2)
 
     result = {
-    "pos": [center_x, center_y]
+    "pos": [center_x, center_y],
+    "bbox": bbox
     }
 
     # 转成 Python 对象
