@@ -56,8 +56,8 @@
     <!-- <rosparam param="unity_rot_deg">[-90, 90, 0]</rosparam> -->
 
     <rosparam param="unity_pos">[0,0,0]</rosparam>
-    <rosparam param="unity_rot_deg">[0,0,90]</rosparam>
-    <rosparam param="unity_scale">[-1, 1, 1]</rosparam>
+    <rosparam param="unity_rot_deg">[0,0,0]</rosparam>
+    <rosparam param="unity_scale">[1, 1, 1]</rosparam>
 
     <!-- 频率与下采样 -->
     <param name="depth_rate_hz" value="30.0" />

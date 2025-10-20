@@ -15,6 +15,8 @@ void StateMonitor::init(ros::NodeHandle& nh)
   vla_state_sub_ = nh.subscribe("monitor/vla_state", 10, &StateMonitor::vlaStateCallback, this);
   command_type_sub_ = nh.subscribe("monitor/command_type", 10, &StateMonitor::commandTypeCallback, this);
   command_content_sub_ = nh.subscribe("monitor/command_content", 10, &StateMonitor::commandContentCallback, this);
+  finish_mission_sub_ = nh.subscribe("monitor/finish_mission", 10, &StateMonitor::finishMissionCallback, this);
+  finish_command_sub_ = nh.subscribe("monitor/finish_command", 10, &StateMonitor::finishCommandCallback, this);
   vla_state_ = VLA_STATE::INIT;
   command_type_ = COMMAND_TYPE::WAIT;
 
@@ -51,6 +53,8 @@ void StateMonitor::drawTUI()
             ftxui::text(L"Here is the state of the VLA") | ftxui::bold | ftxui::color(ftxui::Color::Cyan) | ftxui::align_right
         }) | ftxui::center,
         ftxui::separator(),
+
+        // VLA State Display
         ftxui::hbox({
             ftxui::text(L"VLA_STATE: ") | ftxui::bold | ftxui::color(ftxui::Color::Cyan) | ftxui::align_right
         }) | ftxui::center,
@@ -79,6 +83,8 @@ void StateMonitor::drawTUI()
             create_mode_box(L"EGO_FINISH", vla_state_ == VLA_STATE::EGO_FINISH ? L"EGO_FINISH" : L""),
         }) | ftxui::center,
         ftxui::separator(),
+
+        // Command Type Display
         ftxui::hbox({
             ftxui::text(L"COMMAND_TYPE: ") | ftxui::bold | ftxui::color(ftxui::Color::Cyan) | ftxui::align_right
         }) | ftxui::center,
@@ -105,13 +111,30 @@ void StateMonitor::drawTUI()
             create_mode_box(L"REPLAN", command_type_ == COMMAND_TYPE::REPLAN ? L"REPLAN" : L"")
         }) | ftxui::center,
         ftxui::separator(),
+
+        // Command Content Display
         ftxui::hbox({
             ftxui::text(L"COMMAND_CONTENT: ") | ftxui::bold | ftxui::color(ftxui::Color::Cyan) | ftxui::align_right
         }) | ftxui::center,
         ftxui::separator(),
         ftxui::hbox({
-            ftxui::text(command_content_.empty() ? L"None" : convertToWstring(command_content_.back())) | 
+            ftxui::text(command_content_.empty() ? L"None" : convertToWstring(command_content_.front())) | 
                 ftxui::bold | ftxui::color(ftxui::Color::YellowLight) | ftxui::border
+        }) | ftxui::center,
+        ftxui::separator(),
+
+        // Finish Mission and Command Display (Left and Right)
+        ftxui::hbox({
+            ftxui::text(L"Finish Mission: ") | ftxui::bold | ftxui::color(ftxui::Color::Cyan),
+            ftxui::text(L"True") | ftxui::color(finish_mission_ ? ftxui::Color::Green : ftxui::Color::White),
+            ftxui::separator(),
+            ftxui::text(L"False") | ftxui::color(finish_mission_ ? ftxui::Color::White : ftxui::Color::Green)
+        }) | ftxui::center,
+        ftxui::hbox({
+            ftxui::text(L"Finish Command: ") | ftxui::bold | ftxui::color(ftxui::Color::Cyan),
+            ftxui::text(L"True") | ftxui::color(finish_command_ ? ftxui::Color::Green : ftxui::Color::White),
+            ftxui::separator(),
+            ftxui::text(L"False") | ftxui::color(finish_command_ ? ftxui::Color::White : ftxui::Color::Green)
         }) | ftxui::center,
     }) | ftxui::center;
 
@@ -133,8 +156,20 @@ void StateMonitor::commandTypeCallback(const std_msgs::Int32::ConstPtr& msg)
 
 void StateMonitor::commandContentCallback(const std_msgs::String::ConstPtr& msg)
 {
+  command_content_.clear();
   command_content_.push_back(msg->data);
 }
+
+void StateMonitor::finishMissionCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+  finish_mission_ = msg->data;
+}
+
+void StateMonitor::finishCommandCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+  finish_command_ = msg->data;
+}
+
 
 int main(int argc, char** argv)
 {

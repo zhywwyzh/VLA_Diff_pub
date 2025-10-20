@@ -9,6 +9,7 @@
 #include <std_msgs/Int32.h>
 #include <Eigen/Dense>
 #include <std_msgs/String.h>
+#include <std_msgs/Bool.h>
 
 #include <ftxui/screen/string.hpp>
 #include <ftxui/screen/color.hpp>
@@ -37,14 +38,17 @@ private:
   void vlaStateCallback(const std_msgs::Int32::ConstPtr& msg);
   void commandTypeCallback(const std_msgs::Int32::ConstPtr& msg);
   void commandContentCallback(const std_msgs::String::ConstPtr& msg);
+  void finishMissionCallback(const std_msgs::Bool::ConstPtr& msg);
+  void finishCommandCallback(const std_msgs::Bool::ConstPtr& msg);
   std::wstring toWStringWithPrecision(float value, int precision);
-  ros::Subscriber vla_state_sub_, command_type_sub_, command_content_sub_;
+  ros::Subscriber vla_state_sub_, command_type_sub_, command_content_sub_, finish_mission_sub_, finish_command_sub_;
 
   COMMAND_TYPE command_type_{COMMAND_TYPE::WAIT};
   VLA_STATE vla_state_{VLA_STATE::INIT};
 
   std::vector<std::string> command_content_;
-
+  bool finish_mission_;
+  bool finish_command_;
 };
 
 #endif
