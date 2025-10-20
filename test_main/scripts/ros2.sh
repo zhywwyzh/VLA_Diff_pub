@@ -1,3 +1,5 @@
+#!/bin/bash
+
 unset ROS_DISTRO
 unset ROS_VERSION
 unset ROS_PYTHON_VERSION

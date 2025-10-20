@@ -1,3 +1,5 @@
+#!/bin/bash
+
 cd /home/zhywwyzh/workspace/VLA_Diff
 unset ROS_DISTRO
 unset ROS_VERSION
