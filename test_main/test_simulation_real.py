@@ -96,6 +96,7 @@ class UAVPolicyNode(BasePolicyNode):
         self.bridge = CvBridge()
         self.bbox = [0, 0, 0, 0]
         self.first_bbox = []
+        self.if_plan = False
         # TODO 限制重规划次数，需要删除
         self.replan_count = 0
 
@@ -162,6 +163,14 @@ class UAVPolicyNode(BasePolicyNode):
             "monitor/command_content", String, queue_size=10
         )
 
+        self.finish_mission_pub = rospy.Publisher(
+            "monitor/finish_mission", Bool, queue_size=10
+        )
+
+        self.finish_command_pub = rospy.Publisher(
+            "monitor/finish_command", Bool, queue_size=10
+        )
+
         # 初始化 WebSocket / 服务端客户端
         self.client = None
         self.prompt = None
@@ -194,6 +203,14 @@ class UAVPolicyNode(BasePolicyNode):
         state_msg = Int32()
         state_msg.data = self.vla_state if self.vla_state is not None else -1
         self.monitor_vla_state_pub.publish(state_msg)
+
+        finish_mission_msg = Bool()
+        finish_mission_msg.data = self.finish_mission
+        self.finish_mission_pub.publish(finish_mission_msg)
+
+        finish_command_msg = Bool()
+        finish_command_msg.data = self.finish_command
+        self.finish_command_pub.publish(finish_command_msg)
 
     def publish_command_content(self, command_content):
         """发布当前指令内容"""
@@ -232,7 +249,7 @@ class UAVPolicyNode(BasePolicyNode):
             case COMMAND_TYPE.GET_PRE:
                 rospy.loginfo("收到 GET_PRE 指令，准备执行任务")
                 self.command_content = []
-                replan_times = self.replan_time.pop(0)
+                # replan_times = self.replan_time.pop(0)
                 if self.prepare_content:
                     # print(f"规划任务为: {self.prepare_content}")
                     prompt = self.pre_prompt.pop(0)
@@ -251,7 +268,8 @@ class UAVPolicyNode(BasePolicyNode):
                         if self.is_label:
                             self.command_content.append(self.replan_content)
                             self.publish_command_content(self.command_content)
-                            self.vla_state = VLA_STATE.PLAN
+                            # self.vla_state = VLA_STATE.PLAN
+                            self.if_plan = True
                             time.sleep(3)
                         else:
                             time.sleep(1)
@@ -276,7 +294,8 @@ class UAVPolicyNode(BasePolicyNode):
         # 原封不动保存整段文本
         self.command_content.append(msg.data)
         self.publish_command_content(self.command_content)
-        self.vla_state = VLA_STATE.PLAN
+        # self.vla_state = VLA_STATE.PLAN
+        self.if_plan = True
         # rospy.loginfo(f"✅ 收到完整 content 消息: {msg.data}")
 
     def calculate_plan_yaw(self, first_waypoint, first_frame, current_frame, over_edge):
@@ -562,32 +581,34 @@ class UAVPolicyNode(BasePolicyNode):
                             rgb_image = self.frame.rgb_image
                             current_frame = self.frame
                             self.bbox, self.result, self.finish_mission = open_serve(self.first_rgb, current_frame.rgb_image, cmd)
-                            # 发布bbox图像
-                            pt1 = (int(self.bbox[0]), int(self.bbox[1]))
-                            pt2 = (int(self.bbox[2]), int(self.bbox[3]))
-                            bbox_image = rgb_image.copy()
-                            color_red_rgb = (0, 0, 255)
-                            thickness = 4
-                            cv2.rectangle(bbox_image, pt1, pt2, color_red_rgb, thickness)
-                            self.publish_image(bbox_image, self.bbox_image_pub)
-                            rospy.loginfo(f"推理耗时: {time.time() - origin_time:.2f} 秒")
-                            # print(f"像素中心位于：{self.result}")
-                            # pdb.set_trace()
-                            waypoint = self.pixel_to_world(self.result, self.frame)
+                            if self.bbox is not None:
+                                # 发布bbox图像
+                                pt1 = (int(self.bbox[0]), int(self.bbox[1]))
+                                pt2 = (int(self.bbox[2]), int(self.bbox[3]))
+                                bbox_image = rgb_image.copy()
+                                color_red_rgb = (0, 0, 255)
+                                thickness = 4
+                                cv2.rectangle(bbox_image, pt1, pt2, color_red_rgb, thickness)
+                                self.publish_image(bbox_image, self.bbox_image_pub)
+                                rospy.loginfo(f"推理耗时: {time.time() - origin_time:.2f} 秒")
+                                # print(f"像素中心位于：{self.result}")
+                                # pdb.set_trace()
+                                waypoint = self.pixel_to_world(self.result, self.frame, percent_point=0.2)
                             if self.first_frame is None:
                                 self.first_frame = current_frame
                                 self.first_bbox = self.bbox
 
                             # TODO 限制重规划次数，需要删除
                             self.replan_count += 1
-                            if self.replan_count > 3:
-                                self.replan_count = 0
-                                self.finish_mission = True
+                            # if self.replan_count > 3:
+                            #     self.replan_count = 0
+                            #     self.finish_mission = True
 
                             rospy.loginfo(f"任务完成状态: {self.finish_mission}")
                             if self.finish_mission:
                                 self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
-                                self.finish_command = True                                
+                                self.finish_command = True    
+                                time.sleep(0.1)                            
                                 # self.command_content.pop(0)
                                 # self.waypoint = self.calculate_plan_yaw(self.first_waypoint, self.first_frame, current_frame, self.over_edge)
                                 # self.if_yaw = True
@@ -611,6 +632,7 @@ class UAVPolicyNode(BasePolicyNode):
                         rospy.logwarn("没有有效的导航点，将重新规划")
                         self.publish_command_content(self.command_content)
                         self.vla_state = VLA_STATE.PLAN
+                        time.sleep(0.1)
                         continue
                     # self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
                     # if self.finish_mission:
@@ -631,7 +653,10 @@ class UAVPolicyNode(BasePolicyNode):
                         # print(f"当前ego_state_trigger状态: {self.ego_state_trigger}")
                         self.vla_state = VLA_STATE.EGO_FINISH
                         self.ego_state_trigger = False
-                        continue
+                        self.if_plan = False
+                    if self.if_plan:
+                        self.vla_state = VLA_STATE.PLAN
+                        self.if_plan = False
                     time.sleep(0.1)
                     continue
 

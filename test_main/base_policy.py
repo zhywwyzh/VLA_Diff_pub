@@ -35,7 +35,7 @@ class BasePolicyNode(object):
         self.frame: Optional[Frame] = None
         self.depth_info = None
         self.extrinsics = np.array([0.15, 0, 0.1], dtype=np.float64)
-        self.safe_dis = 0.6
+        self.safe_dis = 0.3
         self.use_intrinsics = True
         self.depth_scale_param = 57.0
         self.first_frame = None
@@ -348,7 +348,7 @@ class BasePolicyNode(object):
             depth_raw = 5.0
         # print(f"depth:{depth_raw}")
         if depth_raw > 1.0 + 1e-6:
-            depth_val = (depth_raw - 0.6) * depth_scale
+            depth_val = (depth_raw - self.safe_dis) * depth_scale
         else:
             depth_val = depth_raw * depth_scale
         if not np.isfinite(depth_val) or depth_val <= 0:

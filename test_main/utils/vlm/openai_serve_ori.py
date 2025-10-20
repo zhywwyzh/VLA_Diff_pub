@@ -5,6 +5,7 @@ import re
 import json
 # from utils.vlm.prompt import USER3, ASSISTANT3
 import os
+import pdb
 
 os.environ.pop("HTTP_PROXY", None)
 os.environ.pop("HTTPS_PROXY", None)
@@ -46,11 +47,11 @@ def open_serve(img_first, img_cur, input1):
         <image>
         <image>
         你将得到首次观察rgb图像、当前观察的rgb图像。
-        当前任务是{input1}，
         请给出{input2}的bounding box。
+        如果在当前观察的rgb图像中没有识别到{input2}，请返回none。
         另外根据首次观察的rgb图像，判断当前观察的rgb图像，判断任务是否完成。
         输出mission finish的状态。
-        最终按照json格式{{"bbox_2d": [x1, y1, x2, y2], "mission_finish": *}}输出。
+        最终按照json格式{{\"bbox_2d\": [x1, y1, x2, y2]或none, \"mission_finish\": true/false}}输出。
         """
 
     # 构造请求
@@ -99,10 +100,13 @@ def open_serve(img_first, img_cur, input1):
         # 如果直接是json字符串
         bbox_data = json.loads(content)
         bbox = bbox_data['bbox_2d']
-
-    x1, y1, x2, y2 = bbox
-    center_x = int((x1 + x2) / 2)
-    center_y = int((y1 + y2) / 2)
+    bbox = None if bbox == 'none' else bbox
+    if bbox is not None:
+        x1, y1, x2, y2 = bbox
+        center_x = int((x1 + x2) / 2)
+        center_y = int((y1 + y2) / 2)
+    else:
+        center_x, center_y = -1, -1
 
     result = {
     "pos": [center_x, center_y],
