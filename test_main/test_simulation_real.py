@@ -593,7 +593,7 @@ class UAVPolicyNode(BasePolicyNode):
                                 rospy.loginfo(f"推理耗时: {time.time() - origin_time:.2f} 秒")
                                 # print(f"像素中心位于：{self.result}")
                                 # pdb.set_trace()
-                                waypoint = self.pixel_to_world(self.result, self.frame, percent_point=0.2)
+                                waypoint = self.pixel_to_world(self.result, current_frame, percent_point=0.2)
                             if self.first_frame is None:
                                 self.first_frame = current_frame
                                 self.first_bbox = self.bbox
@@ -653,7 +653,7 @@ class UAVPolicyNode(BasePolicyNode):
                         # print(f"当前ego_state_trigger状态: {self.ego_state_trigger}")
                         self.vla_state = VLA_STATE.EGO_FINISH
                         self.ego_state_trigger = False
-                        self.if_plan = False
+                        continue
                     if self.if_plan:
                         self.vla_state = VLA_STATE.PLAN
                         self.if_plan = False
