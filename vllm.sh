@@ -1,6 +1,6 @@
 export CUDA_VISIBLE_DEVICES=0
 
-vllm serve /home/zhywwyzh/workspace/VLA_Diff/output/3dgs-new/7B/mission_sharegpt_qwen25_sample3_order_with_none_awq \
+vllm serve /home/zhywwyzh/workspace/VLA_Diff/output/3dgs-new/7B/mission_sharegpt_qwen3_8b_sample3_order_skip_empty_awq \
   --dtype auto \
   --port 9000 \
   --max-model-len 3000 \
