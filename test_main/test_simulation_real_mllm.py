@@ -48,12 +48,12 @@ class UAVPolicyNode(BasePolicyNode):
         self.last_command = None
         self.first_rgb = None
         self.prepare_content = [
-            "请原地右转90度",
-            "前往最近的椅子",
-            "请原地左转60度",
-            "前往黄色架子第二层",
-            "请原地左转90度"
-            "前往黄色大柜子",
+            # "请原地右转90度",
+            # "前往最近的椅子",
+            # "请原地左转60度",
+            # "前往黄色架子第二层",
+            # "请原地左转90度"
+            # "前往黄色大柜子",
             "前往白色柱子",
             "请原地右转90度"
             ]
@@ -62,12 +62,12 @@ class UAVPolicyNode(BasePolicyNode):
         # self.pre_prompt = self.prepare_content
         # self.pre_prompt.append("完成任务")
         self.pre_prompt = [
-            "请原地右转90度",
-            "前往最近的椅子",
-            "请原地左转60度",
-            "前往黄色架子第二层",
-            "请原地左转90度",
-            "前往黄色大柜子",
+            # "请原地右转90度",
+            # "前往最近的椅子",
+            # "请原地左转60度",
+            # "前往黄色架子第二层",
+            # "请原地左转90度",
+            # "前往黄色大柜子",
             "前往白色柱子",
             "请原地右转90度",
             "完成任务"
@@ -424,7 +424,7 @@ class UAVPolicyNode(BasePolicyNode):
                 elif re.search(r"需要进行什么样的分析", message[0]["text"]):
                     if self.frame is not None and hasattr(self.frame, 'rgb_image') and self.frame.rgb_image is not None:
                         rospy.loginfo("收到图像分析请求，发送当前帧图像")
-                        response = self.publish_client.send_image(self.frame.rgb_image, "分析当前图像", "user")
+                        response = self.publish_client.send_image(self.frame.rgb_image, "分析当前图像")
                         rospy.loginfo(f"当前帧接收状态: {response['message']}")
             time.sleep(0.5)
 
@@ -545,6 +545,8 @@ class UAVPolicyNode(BasePolicyNode):
                     if getattr(self, 'depth_info', None) and self.get_frame_snapshot() is not None:
                         print("初始化完成")
                         self.vla_state = VLA_STATE.WAIT_FOR_MISSION
+                        response = self.publish_client.send_image(self.frame.rgb_image, "分析当前图像")
+                        rospy.loginfo(f"当前帧接收状态: {response['message']}")
                     else:
                         rate.sleep()
                         continue
