@@ -33,7 +33,7 @@ from websockets.exceptions import ConnectionClosedError, InvalidStatusCode
 import ssl
 from pre_prompt import SYSTEM_PROMPT, USER1, ASSISTANT1, USER2, ASSISTANT2, USER3, ASSISTANT3, USER4, ASSISTANT4
 from doubao_voice.protocols import MsgType, full_client_request, receive_message
-from key import (GEMINI_API_KEY, CHATGLM_API_KEY, OPENAI_API_KEY, DOUBAO_APPID, DOUBAO_ACCESS_TOKEN, DEFAULT_DOUBAO_API_KEY,
+from key import (VLLM_POST, GEMINI_API_KEY, CHATGLM_API_KEY, OPENAI_API_KEY, DOUBAO_APPID, DOUBAO_ACCESS_TOKEN, DEFAULT_DOUBAO_API_KEY,
                 DEFAULT_DOUBAO_BASE_URL, DEFAULT_DOUBAO_EXTRA_HEADERS, DEFAULT_DEFAULT_DOUBAO_ENDPOINT)
 
 # 尝试导入ROS发布器
@@ -135,8 +135,8 @@ DEFAULT_MODEL_TIMEOUT = 60    # 其他模型超时时间（秒）
 
 # 配置vllm客户端
 try:
-    vllm_client = OpenAI(api_key="EMPTY", base_url="http://127.0.0.1:9001/v1")
-    logger.info("本地 vLLM(OpenAI兼容) 客户端配置成功: http://127.0.0.1:9001/v1")
+    vllm_client = OpenAI(api_key="EMPTY", base_url=VLLM_POST)
+    logger.info(f"本地 vLLM(OpenAI兼容) 客户端配置成功: {VLLM_POST}")
 except Exception as e:
     logger.error(f"本地 vLLM 客户端配置失败: {e}")
     vllm_client = None
