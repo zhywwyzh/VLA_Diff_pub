@@ -20,7 +20,6 @@ unity
 pipeline/key.py
 pipeline/__MACOSX
 pipeline/__pycache__
-pipeline/doubao_voice
 pipeline/incoming_images
 pipeline/logs
 pipeline/received_images
