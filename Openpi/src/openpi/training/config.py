@@ -358,7 +358,7 @@ class TrainConfig:
     batch_size: int = 32
     # Number of workers to use for the data loader. Increasing this number will speed up data loading but
     # will increase memory and CPU usage.
-    num_workers: int = 16
+    num_workers: int = 8
     # Number of train steps (batches) to run.
     num_train_steps: int = 30_000
 
@@ -367,7 +367,7 @@ class TrainConfig:
     # How often (in steps) to save checkpoints.
     save_interval: int = 2000
     # If set, any existing checkpoints matching step % keep_period == 0 will not be deleted.
-    keep_period: int | None = 10000
+    keep_period: int | None = 1
 
     # If true, will overwrite the checkpoint directory if it already exists.
     overwrite: bool = False
@@ -420,6 +420,7 @@ _CONFIGS = [
         ),
         data=LeRobotLiberoDataConfig(
             repo_id="uav_flow",  # Update with your dataset repo ID
+            # repo_id="1ep_dataset",  # Updated to use 1ep_dataset
             base_config=DataConfig(prompt_from_task=True),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_base/params"),
@@ -442,6 +443,124 @@ _CONFIGS = [
         ema_decay=None,
         # fsdp_devices=8, # Assuming FSDP across 8 GPUs
         # Consider setting exp_name, e.g., exp_name="pi0_uav_low_mem_finetune_run1"
+    ),
+    TrainConfig(
+        name="paligemma_actiononly_uav_low_mem_finetune",
+        model=pi0.Pi0Config(
+            # paligemma_variant="gemma_2b_lora",
+            action_expert_variant="gemma_300m_lora",
+            action_horizon=10,
+        ),
+        data=LeRobotLiberoDataConfig(
+            repo_id="uav_flow",
+            base_config=DataConfig(prompt_from_task=True),
+        ),
+        weight_loader=weight_loaders.Pi0BaseWithNativePaliGemmaLoader(),
+        lr_schedule=_optimizer.CosineDecaySchedule(peak_lr=5e-5),
+        batch_size=64,
+        num_train_steps=500_000,
+        freeze_filter=pi0.Pi0Config(
+            # paligemma_variant="gemma_2b_lora",
+            action_expert_variant="gemma_300m_lora",
+            action_horizon=10,
+        ).get_freeze_filter(),
+        ema_decay=None,
+    ),
+    TrainConfig(
+        name="pi0_uav_low_mem_finetune_1ep",
+        model=pi0.Pi0Config(
+            paligemma_variant="gemma_2b_lora", 
+            action_expert_variant="gemma_300m_lora",
+            action_horizon=10,  # Horizon Steps from image
+            # lora_rank=32  # LoRA Rank from image
+        ),
+        data=LeRobotLiberoDataConfig(
+            repo_id="1ep_dataset",  # Use 1ep_dataset
+            base_config=DataConfig(prompt_from_task=True),
+        ),
+        weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_base/params"),
+        lr_schedule=_optimizer.CosineDecaySchedule(peak_lr=5e-5),  # Learning Rate from image
+        batch_size=48,  # Batch Size from image
+        num_train_steps=7_490,  
+        freeze_filter=pi0.Pi0Config(
+            paligemma_variant="gemma_2b_lora", 
+            action_expert_variant="gemma_300m_lora",
+            action_horizon=6, # Match model config
+            # lora_rank=32 # Match model config
+        ).get_freeze_filter(),
+        ema_decay=None,
+    ),
+    TrainConfig(
+        name="pi0_uav_low_mem_finetune_2ep",
+        model=pi0.Pi0Config(
+            paligemma_variant="gemma_2b_lora", 
+            action_expert_variant="gemma_300m_lora",
+            action_horizon=10,  # Horizon Steps from image
+            # lora_rank=32  # LoRA Rank from image
+        ),
+        data=LeRobotLiberoDataConfig(
+            repo_id="2ep_dataset",  # Use 1ep_dataset
+            base_config=DataConfig(prompt_from_task=True),
+        ),
+        weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_base/params"),
+        lr_schedule=_optimizer.CosineDecaySchedule(peak_lr=5e-5),  # Learning Rate from image
+        batch_size=48,  # Batch Size from image
+        num_train_steps=12_220,  
+        freeze_filter=pi0.Pi0Config(
+            paligemma_variant="gemma_2b_lora", 
+            action_expert_variant="gemma_300m_lora",
+            action_horizon=6, # Match model config
+            # lora_rank=32 # Match model config
+        ).get_freeze_filter(),
+        ema_decay=None,
+    ),
+    TrainConfig(
+        name="pi0_uav_low_mem_finetune_4ep",
+        model=pi0.Pi0Config(
+            paligemma_variant="gemma_2b_lora", 
+            action_expert_variant="gemma_300m_lora",
+            action_horizon=10,  # Horizon Steps from image
+            # lora_rank=32  # LoRA Rank from image
+        ),
+        data=LeRobotLiberoDataConfig(
+            repo_id="4ep_dataset",  # Use 1ep_dataset
+            base_config=DataConfig(prompt_from_task=True),
+        ),
+        weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_base/params"),
+        lr_schedule=_optimizer.CosineDecaySchedule(peak_lr=5e-5),  # Learning Rate from image
+        batch_size=48,  # Batch Size from image
+        num_train_steps=19_810,  
+        freeze_filter=pi0.Pi0Config(
+            paligemma_variant="gemma_2b_lora", 
+            action_expert_variant="gemma_300m_lora",
+            action_horizon=6, # Match model config
+            # lora_rank=32 # Match model config
+        ).get_freeze_filter(),
+        ema_decay=None,
+    ),
+    TrainConfig(
+        name="pi0_uav_low_mem_finetune_8ep",
+        model=pi0.Pi0Config(
+            paligemma_variant="gemma_2b_lora", 
+            action_expert_variant="gemma_300m_lora",
+            action_horizon=10,  # Horizon Steps from image
+            # lora_rank=32  # LoRA Rank from image
+        ),
+        data=LeRobotLiberoDataConfig(
+            repo_id="8ep_dataset",  # Use 1ep_dataset
+            base_config=DataConfig(prompt_from_task=True),
+        ),
+        weight_loader=weight_loaders.CheckpointWeightLoader("s3://openpi-assets/checkpoints/pi0_base/params"),
+        lr_schedule=_optimizer.CosineDecaySchedule(peak_lr=5e-5),  # Learning Rate from image
+        batch_size=48,  # Batch Size from image
+        num_train_steps=30_990,  
+        freeze_filter=pi0.Pi0Config(
+            paligemma_variant="gemma_2b_lora", 
+            action_expert_variant="gemma_300m_lora",
+            action_horizon=6, # Match model config
+            # lora_rank=32 # Match model config
+        ).get_freeze_filter(),
+        ema_decay=None,
     ),
     TrainConfig(
         name="pi0_uav_low_mem_finetune_lxx",

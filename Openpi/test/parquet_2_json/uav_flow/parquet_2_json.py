@@ -115,9 +115,9 @@ def process_parquet_episode(file_path, output_dir, save_json=True):
 if __name__ == "__main__":
     # 当作为主脚本运行时，保持原有行为
     # 定义输出目录
-    output_dir = '/data/vla/Openpi/test/parquet_2_json/uav_flow/output'
+    output_dir = '/data/vla/VLA_Diff/Openpi/test/parquet_2_json/uav_flow/output'
     # 定义 Parquet 文件路径
-    file_path = '/data/vla/uav_flow_test_lxx/merged/train/uav_flow/data/chunk-000/episode_000032.parquet'
+    file_path = '/data/vla/uav_flow_lerobot_3w_final/test/uav_flow/data/chunk-001/episode_000120.parquet'
     # file_path = '/data/vla/uav_flow_test/parts/turn/train1/uav_flow/data/chunk-000/episode_000501.parquet'
     
     # 调用函数并保存 JSON 文件

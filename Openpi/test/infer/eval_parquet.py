@@ -3,6 +3,7 @@ import logging
 import sys
 import os
 import re
+import argparse
 
 import imageio.v2 as imageio
 import matplotlib.pyplot as plt
@@ -13,10 +14,10 @@ from openpi_client import websocket_client_policy as _websocket_client_policy
 
 # os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = 'platform'
 
-sys.path.append('/data/vla/Openpi/test/parquet_2_json/uav_flow')
+sys.path.append('/data/vla/VLA_Diff/Openpi/test/parquet_2_json/uav_flow')
 from parquet_2_json import process_parquet_episode
 # 添加路径以导入视频生成脚本
-sys.path.append('/data/vla/Openpi/test/infer/trajectory_video/py')
+sys.path.append('/data/vla/VLA_Diff/Openpi/test/infer/trajectory_video/py')
 from trajectory_video_new import generate_video_from_trajectory
 
 def get_prompt_from_task_index(tasks_jsonl_path, task_index):
@@ -118,19 +119,25 @@ def main():
     # EPISODE_DATA_PATH = "/home/adminroot/lxx/dataset/uav_flow_lerobot_format/train/uav_flow/data/chunk-000/episode_000020.parquet"
     # 这条数据感觉有问题
     # EPISODE_DATA_PATH = "/home/adminroot/lxx/dataset/uav_flow_lerobot_format/fixed_command/train0621/uav_flow/data/chunk-000/episode_000102.parquet"
-    base_path = "/data/vla/uav_flow_lerobot_3w_final/train"
+    # base_path = "/data/vla/uav_flow_lerobot_3w_final/train"
+    base_path = "/data/vla/sampled_uav_datasets/1ep_dataset"
     # case_name = "pass"
     # parquet_dir = os.path.join(base_path, "test_"+f"{case_name}"+"/data/chunk-"+"000"+"/")
-    parquet_dir = os.path.join(base_path, "uav_flow/data/chunk-"+"000"+"/")
-    case_name = 'train'
+    # parquet_dir = os.path.join(base_path, "uav_flow/data/chunk-"+"000"+"/")
+    # case_name = 'train'
+    parquet_dir = os.path.join(base_path, "data/chunk-"+"000"+"/")
+    case_name = '1ep_dataset'
     if not os.path.isdir(parquet_dir):
         logging.error(f"Directory not found: {parquet_dir}")
         return
 
-    for filename in sorted(os.listdir(parquet_dir)):
-        if not filename.endswith(".parquet"):
-            continue
-
+    # for filename in sorted(os.listdir(parquet_dir)):
+    #     if not filename.endswith(".parquet"):
+    #         continue
+    # 只处理前10个episode文件
+    parquet_files = sorted([f for f in os.listdir(parquet_dir) if f.endswith(".parquet")])[:10]
+    
+    for filename in parquet_files:
         EPISODE_DATA_PATH = os.path.join(parquet_dir, filename)
         logging.info(f"\n\n==================== Processing: {EPISODE_DATA_PATH} ====================")
 

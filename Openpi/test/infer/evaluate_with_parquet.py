@@ -11,11 +11,11 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from openpi_client import websocket_client_policy as _websocket_client_policy
 
-sys.path.append('/home/adminroot/lxx/openpi/code/openpi/test/parquet_2_json/uav_flow')
+sys.path.append('/data/vla/VLA_Diff/Openpi/test/parquet_2_json/uav_flow')
 from parquet_2_json import process_parquet_episode
 # 添加路径以导入视频生成脚本
-sys.path.append('/home/adminroot/lxx/openpi/code/openpi/test/infer/trajectory_video/py')
-from trajectory_video_new import generate_video_from_trajectory
+sys.path.append('/data/vla/VLA_Diff/Openpi/test/infer/trajectory_video/py')
+# from trajectory_video_new import generate_video_from_trajectory
 
 def get_prompt_from_task_index(tasks_jsonl_path, task_index):
     """
@@ -106,21 +106,21 @@ def visualize_trajectories_2d_topdown(traj1, traj2):
     plt.show()
 
 def main():
-    HOST = "0.0.0.0"
-    PORT = 8000
+    HOST = "222.130.22.78"
+    PORT = 6666
     # 将此路径更改为指向 Parquet 文件
     # EPISODE_DATA_PATH = "/home/adminroot/lxx/dataset/uav_flow_lerobot_format/fixed_command/pass/train_without_first_10/uav_flow/data/chunk-000/episode_000022.parquet"
     # EPISODE_DATA_PATH = "/home/adminroot/lxx/dataset/uav_flow_lerobot_format/train/uav_flow/data/chunk-000/episode_000020.parquet"
     # 这条数据感觉有问题
     # EPISODE_DATA_PATH = "/home/adminroot/lxx/dataset/uav_flow_lerobot_format/fixed_command/train0621/uav_flow/data/chunk-000/episode_000102.parquet"
-    EPISODE_DATA_PATH = "/home/adminroot/lxx/dataset/uav_flow_lerobot_format/fixed_command/pass/test/uav_flow/data/chunk-000/episode_000027.parquet"
+    EPISODE_DATA_PATH = "/data/vla/uav_flow_lerobot_3w_final/test/uav_flow/data/chunk-008/episode_000800.parquet"
     REPLAN_STEPS = 10  # 每次推理后取前10个动作
-    IGNORE_FIRST_10 = True  # 开关：True则忽略前10条数据，False则保持原样
+    IGNORE_FIRST_10 = False  # 开关：True则忽略前10条数据，False则保持原样
 
     logging.info(f"正在从 {EPISODE_DATA_PATH} 加载并处理 Parquet 数据...")
     
     # 定义提取出的图像的存放位置。评估脚本需要这些位于磁盘上的图像。
-    output_dir_for_images = "/home/adminroot/lxx/openpi/code/openpi/test/infer/infer_output"
+    output_dir_for_images = "/data/vla/VLA_Diff/Openpi/test/infer/infer_output"
     
     # 调用函数来处理 Parquet 文件。
     # 它会将图像保存到 `output_dir_for_images` 并返回所需的数据结构。
@@ -242,7 +242,7 @@ def main():
     else:
         output_filename = "inferred_trajectory.json" # Fallback
 
-    output_path = f"/home/adminroot/lxx/openpi/code/openpi/test/infer/trajectory_video/{output_filename}"
+    output_path = f"/data/vla/VLA_Diff/Openpi/test/infer/trajectory_video/{output_filename}"
     logging.info(f"正在保存推理轨迹到 {output_path}...")
 
     # 准备用于JSON输出的数据列表
@@ -274,13 +274,13 @@ def main():
     
     logging.info(f"推理轨迹已保存到 {output_path}")
 
-    # 自动调用脚本生成视频
-    logging.info("正在调用脚本生成轨迹视频...")
-    try:
-        generate_video_from_trajectory(output_path)
-        logging.info("视频生成完毕。")
-    except Exception as e:
-        logging.error(f"生成视频时出错: {e}")
+    # # 自动调用脚本生成视频
+    # logging.info("正在调用脚本生成轨迹视频...")
+    # try:
+    #     generate_video_from_trajectory(output_path)
+    #     logging.info("视频生成完毕。")
+    # except Exception as e:
+    #     logging.error(f"生成视频时出错: {e}")
 
 
 if __name__ == "__main__":
