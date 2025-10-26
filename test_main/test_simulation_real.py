@@ -29,10 +29,9 @@ from cv_bridge import CvBridge
 from utils.vlm.openai_serve_ori import open_serve
 from utils.param import COMMAND_TYPE, VLA_STATE
 
-from base_policy import BasePolicyNode  # 假定已有 ROS1 版本或与 ROS 无关的 Base
-from utils.server.publish_client import MessageClient
+from base_policy_real import BasePolicyNode  # 假定已有 ROS1 版本或与 ROS 无关的 Base
+from utils.server.publish_client_ori import MessageClient
 from utils.server.receive_client import GeminiMessageClient
-
 
 class UAVPolicyNode(BasePolicyNode):
     def __init__(self):
@@ -49,7 +48,7 @@ class UAVPolicyNode(BasePolicyNode):
         self.last_command = None
         self.first_rgb = None
         self.prepare_content = [
-            "请原地右转90度",
+            "前往最左侧的白色柱子",
             "前往最近的椅子",
             "请原地左转60度",
             "前往黄色架子第二层",
@@ -63,7 +62,7 @@ class UAVPolicyNode(BasePolicyNode):
         # self.pre_prompt = self.prepare_content
         # self.pre_prompt.append("完成任务")
         self.pre_prompt = [
-            "请原地右转90度",
+            "前往最左侧的白色柱子",
             "前往最近的椅子",
             "请原地左转60度",
             "前往黄色架子第二层",
@@ -378,7 +377,56 @@ class UAVPolicyNode(BasePolicyNode):
 
     def listen_messages(self):
         """循环监听mllm新消息"""
-        pass
+        while not rospy.is_shutdown():
+            message = self.receive_client.get_new_messages()
+            
+            if message:
+                # 检测到"我将执行以下操作"时，提取内容并更新 prepare_content 和 pre_prompt
+                if re.search("我将执行以下操作", message[0]["text"]):
+                    numbered_actions = re.findall(r'^\s*\d+\s*[\.、\)]\s*(.+?)\s*$', message[0]["text"], flags=re.M)
+                    # 清理末尾句号等冗余标点
+                    actions = [re.sub(r'[。．.]$', '', a).strip() for a in numbered_actions if a.strip()]
+                    if actions:
+                        self.prepare_content = actions
+                        self.pre_prompt = actions + ["完成任务"]
+                        type_msg = Int32()
+                        type_msg.data = 8
+                        self.type_pub.publish(type_msg)
+                        self.finish_command = False
+                        rospy.loginfo(f"更新任务列表: {self.prepare_content}")
+                
+                # 检测到"原地左转|右转n度"时，提取内容并更新 prepare_content 和 pre_prompt
+                elif re.search(r"好的，我将原地(左|右)转(\d+)度", message[0]["text"]):
+                    action = re.findall(r"原地(左|右)转(\d+)度", message[0]["text"])
+                    if action:
+                        direction, degree = action[0]
+                        self.prepare_content = [f"原地{direction}转{degree}度"]
+                        self.pre_prompt = [f"原地{direction}转{degree}度", "完成任务"]
+                        type_msg = Int32()
+                        type_msg.data = 8
+                        self.type_pub.publish(type_msg)
+                        self.finish_command = False
+                        rospy.loginfo(f"更新任务列表: {self.prepare_content}")
+
+                # 检测到"前往**"时，提取内容并更新 prepare_content 和 pre_prompt
+                elif re.search(r"好的，我将前往([\u4e00-\u9fa5]+)", message[0]["text"]):
+                    destination = re.findall(r"前往([\u4e00-\u9fa5]+)", message[0]["text"])
+                    if destination:
+                        self.prepare_content = [f"前往{destination[0]}"]
+                        self.pre_prompt = [f"前往{destination[0]}", "完成任务"]
+                        type_msg = Int32()
+                        type_msg.data = 8
+                        self.type_pub.publish(type_msg)
+                        self.finish_command = False
+                        rospy.loginfo(f"更新任务列表: {self.prepare_content}")
+
+                # 检测到"需要进行什么样的分析"时，发送图像并记录状态
+                elif re.search(r"需要进行什么样的分析", message[0]["text"]) or re.search(r"需求进行", message[0]["text"]):
+                    if self.frame is not None and hasattr(self.frame, 'rgb_image') and self.frame.rgb_image is not None:
+                        rospy.loginfo("收到图像分析请求，发送当前帧图像")
+                        response = self.publish_client.send_image(self.frame.rgb_image, "分析当前图像")
+                        rospy.loginfo(f"当前帧接收状态: {response['message']}")
+            time.sleep(0.5)
 
     def publish_action(self, action, look_forward=True, goal_to_follower=False):
         """发布动作到ROS话题"""
@@ -496,6 +544,8 @@ class UAVPolicyNode(BasePolicyNode):
                 case VLA_STATE.INIT:
                     if getattr(self, 'depth_info', None) and self.get_frame_snapshot() is not None:
                         print("初始化完成")
+                        response = self.publish_client.send_image(self.frame.rgb_image, "分析当前图像")
+                        rospy.loginfo(f"当前帧接收状态: {response['message']}")
                         self.vla_state = VLA_STATE.WAIT_FOR_MISSION
                     else:
                         rate.sleep()
@@ -511,8 +561,8 @@ class UAVPolicyNode(BasePolicyNode):
                 case VLA_STATE.REPLY_MLLM:
                     # rospy.loginfo("到达目的地，基于MLLM回复")
                     self.vla_state = VLA_STATE.WAIT_FOR_MISSION
-                    # response = self.publish_client.send_image(self.frame.rgb_image)
-                    # rospy.loginfo(f"当前帧接收状态: {response['message']}")
+                    response = self.publish_client.send_image(self.frame.rgb_image)
+                    rospy.loginfo(f"当前帧接收状态: {response['message']}")
                     continue
 
                 # TODO 调整plan与replan

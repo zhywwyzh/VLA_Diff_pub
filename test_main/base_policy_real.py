@@ -36,11 +36,10 @@ class BasePolicyNode(object):
         self.frame: Optional[Frame] = None
         self.depth_info = None
         self.extrinsics = np.array([0.0, 0, 0.0], dtype=np.float64)
-        self.safe_dis = 0.6
+        self.safe_dis = 0.3
         self.use_intrinsics = True
         self.depth_scale_param = 57.0
-        self.first_frame = None
-
+        
         self.depth_info = {
                 'height': 640, 'width': 480,
                 'fx': 603.1439208984375, 'fy': 602.61083984375,
@@ -69,7 +68,7 @@ class BasePolicyNode(object):
 
         self.ts = ApproximateTimeSynchronizer(
             [self.odom_sub, self.rgb_sub, self.depth_sub],
-            queue_size=45, slop=0.2, allow_headerless=True
+            queue_size=45, slop=0.1, allow_headerless=True
         )
         self.ts.registerCallback(self.synced_callback)
         rospy.loginfo('message_filters 同步器已启动')
@@ -273,42 +272,22 @@ class BasePolicyNode(object):
             raise ValueError(f"Unknown depth mode: {mode}")
 
     def pixel_to_world(self, results, frame: Frame,
-                       depth_scale=1.0, window=0, depth_mode="z"):
+                       depth_scale=1.0, window=0, depth_mode="z", 
+                       avg_depth=True, percent_point=0.2, use_median=True):
         """
         输入：检测结果(像素 u,v)、帧快照
         输出：像素在世界系中的三维坐标 P_w 及是否需要重规划 replan
         """
-        # if self.depth_info is None:
-        #     raise ValueError("相机参数未就绪")
-        # if self.if_yaw:
-        #     print("执行旋转逻辑")
-        #     current_state = self.frame.current_state  # np.array([x, y, z, roll, pitch, yaw])
-        #     dis = 0.2                                 # 前进距离 0.2m
-
-        #     # 拆分当前状态
-        #     x, y, z, roll, pitch, yaw = current_state
-        #     # 新的朝向
-        #     new_yaw = yaw - self.result.get("yaw", 0.0) / 180.0 * math.pi
-        #     # 沿着 new_yaw 方向前进 dis 米
-        #     new_x = x + dis * math.cos(new_yaw)
-        #     new_y = y + dis * math.sin(new_yaw)
-        #     new_z = z  # 高度不变
-        #     # 生成 waypoint，保持和 current_state 一样的格式
-        #     waypoint = np.array([new_x, new_y, new_z, roll, pitch, new_yaw], dtype=np.float64)
-        #     return waypoint, False
-        # result_yaw = results.get("yaw", 0.0) / 180.0 * math.pi
-        # if abs(result_yaw) < 1e-6 and results["pos"] == [-1, -1]:
-        #     return None, False
-        # yaw = yaw - results.get("yaw", 0.0) / 180.0 * math.pi
-        # if results["pos"] == [-1, -1]:
-        #     P_w = [frame.current_state[0], frame.current_state[1], frame.current_state[2]]
-        #     P_w_full = np.concatenate([P_w, np.array([roll, pitch, yaw], dtype=np.float64)])
-        #     replan = False
-        #     return P_w_full, replan
-        replan = False
+        over_edge = False
+        if self.depth_info is None:
+            raise ValueError("相机参数未就绪")
         roll, pitch, yaw = map(float, frame.current_state[3:6].tolist())
+        yaw = yaw - results.get("yaw", 0.0) / 180.0 * math.pi
+        if results["pos"] == [-1, -1]:
+            P_w = [frame.current_state[0], frame.current_state[1], frame.current_state[2]]
+            P_w_full = np.concatenate([P_w, np.array([roll, pitch, yaw], dtype=np.float64)])
+            return P_w_full
 
-        # print(f"kaishi:{self.depth_info}")
         # ---------- 0) 读入像素与相机参数 ----------
         u, v = float(results["pos"][0]), float(results["pos"][1])
         fx, fy, cx, cy = (self.depth_info['fx'], self.depth_info['fy'],
@@ -326,21 +305,65 @@ class BasePolicyNode(object):
         ui, vi = int(round(u)), int(round(v))
         if not (0 <= ui < W and 0 <= vi < H):
             raise ValueError(f"(u,v)=({ui},{vi}) 超出图像范围 {W}x{H}")
+        # pdb.set_trace()
 
         # ---------- 1) 获取深度 ----------
-        if window > 0:
-            u0, u1 = max(0, ui - window), min(W - 1, ui + window)
-            v0, v1 = max(0, vi - window), min(H - 1, vi + window)
-            patch = frame.depth_image[v0:v1+1, u0:u1+1].astype(np.float64)
-            depth_raw = np.median(patch)
+        if avg_depth:
+            # 使用 avg_depth 逻辑：从 bbox 区域提取有效深度点
+            if "bbox" not in results:
+                rospy.logwarn("avg_depth=True 但 results 中缺少 bbox 信息")
+                depth_raw = 0.0
+            else:
+                bbox = results["bbox"]  # [x1, y1, x2, y2]
+                x1, y1, x2, y2 = bbox
+                
+                # 确保 bbox 在图像范围内
+                x1 = max(0, min(x1, W - 1))
+                x2 = max(0, min(x2, W - 1))
+                y1 = max(0, min(y1, H - 1))
+                y2 = max(0, min(y2, H - 1))
+                
+                # 提取 bbox 区域的深度图
+                bbox_depth = frame.depth_image[y1:y2+1, x1:x2+1].astype(np.float64)
+                
+                # 找到有效点（深度小于 5.0 - 1e-6）
+                valid_mask = (bbox_depth < 5.0 - 1e-6) & (bbox_depth > 0.1 + 1e-6)
+                valid_depths = bbox_depth[valid_mask]
+                
+                if len(valid_depths) == 0:
+                    rospy.logwarn("bbox 区域内没有有效深度点")
+                    depth_raw = 5.0
+                else:
+                    # 排序找到最小的 percent_point 比例的点
+                    valid_depths_sorted = np.sort(valid_depths)
+                    num_points = max(1, int(len(valid_depths_sorted) * percent_point))
+                    selected_depths = valid_depths_sorted[:num_points]
+                    
+                    # True: 中位数, False: 平均值
+                    if use_median:
+                        depth_raw = np.median(selected_depths)
+                    else:
+                        depth_raw = np.mean(selected_depths)
+                    
+                    rospy.loginfo(f"bbox 区域内有效点数: {len(valid_depths)}, 选取点数: {num_points}, 深度值: {depth_raw:.3f}")
         else:
-            depth_raw = float(frame.depth_image[vi, ui])
+            # 中心点附近取窗口
+            if window > 0:
+                u0, u1 = max(0, ui - window), min(W - 1, ui + window)
+                v0, v1 = max(0, vi - window), min(H - 1, vi + window)
+                patch = frame.depth_image[v0:v1+1, u0:u1+1].astype(np.float64)
+                depth_raw = np.median(patch)
+            else:
+                depth_raw = float(frame.depth_image[vi, ui])
 
         if depth_raw > 5.0 + 1e-6:  # 哨兵值逻辑
-            replan = True
+            over_edge = True
             depth_raw = 5.0
-        print(f"depth:{depth_raw}")
-        depth_val = (depth_raw - 0.6) * depth_scale
+        # print(f"depth:{depth_raw}")
+        if depth_raw > 1.0 + 1e-6:
+            depth_val = (depth_raw - self.safe_dis) * depth_scale
+        else:
+            depth_val = depth_raw * depth_scale
         if not np.isfinite(depth_val) or depth_val <= 0:
             raise ValueError(f"无效深度 depth={depth_val}")
 
@@ -353,7 +376,6 @@ class BasePolicyNode(object):
         else:
             fov_info = self.depth_info['fov']
             P_opt = self._backproject_from_fov(u, v, depth_val, W, H, fov_info, mode=depth_mode)
-
         # ---------- 3) 光学系→相机机体系（x前、y左、z上） ----------
         R_opt2cam = np.array([
             [ 0,  0,  1],   # x_cam =  z_opt
@@ -387,13 +409,12 @@ class BasePolicyNode(object):
         P_w = (R_w_cam @ P_cam.T).T + t_wc  # [N,3]
         P_w_full = np.concatenate([P_w, np.array([roll, pitch, yaw], dtype=np.float64)])
         self._publish_p2w_marker(P_w_full, frame.stamp)
-        return P_w_full, replan
+        if self.first_frame is None:
+            self.first_waypoint = P_w_full
+            self.first_depth = depth_raw
+            self.over_edge = over_edge
+        return P_w_full
 
-    def calculate_posture(self, current_state, delta_yaw):
-        """计算姿态"""
-        if delta_yaw > 0.0 + 1e-6:
-            current_state[5] += delta_yaw
-        return current_state
 
     def publish_current_state(self, current_state: np.ndarray, stamp: float):
         msg = PoseStamped()
