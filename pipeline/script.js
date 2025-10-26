@@ -1069,6 +1069,7 @@ async function loadAvailableModels() {
             const gptModels = models.filter(m => m.startsWith('gpt-') && !m.includes('realtime'));
             const doubaoModels = models.filter(m => m.startsWith('doubao-'));
             const realtimeModels = models.filter(m => m.includes('realtime') || m.includes('glm-realtime'));
+            const vllmModels = models.filter(m => m.includes('vllm'));
             
             // 添加Gemini模型
             if (geminiModels.length > 0) {
@@ -1143,6 +1144,17 @@ async function loadAvailableModels() {
                 });
                 modelSelect.appendChild(realtimeGroup);
             }
+            if (vllmModels.length > 0) {
+                const opt = document.createElement('optgroup');
+                opt.label = 'Local vLLM';
+                vllmModels.forEach(m => {
+                    const o = document.createElement('option');
+                    o.value = m;
+                    o.textContent = m;
+                    opt.appendChild(o);
+                });
+                modelSelect.appendChild(opt);
+                }
             
             // 恢复之前的选择或设置默认值
             if (currentSelection && models.includes(currentSelection)) {

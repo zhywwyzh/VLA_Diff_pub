@@ -345,6 +345,10 @@ body {
     content: "🎤 ";
 }
 
+select#model-select optgroup[label*="vLLM"] {
+  font-weight: 600;
+}
+
 /* 实时模型控制样式 */
 .realtime-control-buttons {
     display: flex;

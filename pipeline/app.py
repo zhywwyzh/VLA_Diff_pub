@@ -133,6 +133,14 @@ DISABLE_THINKING_MODE = True  # 是否关闭思考模式（针对支持的模型
 PRO_MODEL_TIMEOUT = 120       # Pro模型超时时间（秒）
 DEFAULT_MODEL_TIMEOUT = 60    # 其他模型超时时间（秒）
 
+# 配置vllm客户端
+try:
+    vllm_client = OpenAI(api_key="EMPTY", base_url="http://127.0.0.1:9001/v1")
+    logger.info("本地 vLLM(OpenAI兼容) 客户端配置成功: http://127.0.0.1:9001/v1")
+except Exception as e:
+    logger.error(f"本地 vLLM 客户端配置失败: {e}")
+    vllm_client = None
+
 # 配置 API 客户端，增加超时设置
 try:
     genai.configure(
@@ -336,6 +344,7 @@ def text_to_speech_chatglm(text, speech_rate=0.8):
 4. 直接朗读原文，语气自然流畅
 {speed_instruction}
 
+
 要朗读的文本：
 {text}"""
         
@@ -538,9 +547,11 @@ class MultimodalChat:
             return self._generate_openai_response(text_input, images, audio_text, model_name)
         elif model_name and 'doubao' in model_name.lower():
             return self._generate_doubao_response(text_input, images, audio_text, model_name)
-        else:
+        elif model_name and 'gemini' in model_name.lower():
             return self._generate_gemini_response(text_input, images, audio_text, model_name)
-    
+        else:
+            return self._generate_vllm_response(text_input, images, audio_text, model_name)
+
     def _generate_openai_response(self, text_input=None, images=None, audio_text=None, model_name=None):
         """使用 OpenAI API 生成响应"""
         if openai_client is None:
@@ -706,8 +717,8 @@ class MultimodalChat:
             logger.info(f"发送给 OpenAI 的消息数量: {len(messages)}")
             logger.info(f"用户消息内容长度: {len(str(messages[-1]))}")
             
-            # 统一设置max_tokens为8192
-            max_tokens = 8192
+            # 统一设置max_tokens为4096
+            max_tokens = 4096
             
             # 调用 OpenAI API
             start_time = time.time()
@@ -748,6 +759,140 @@ class MultimodalChat:
                 return "抱歉，请求格式有误。请检查输入内容。"
             else:
                 return f"抱歉，处理请求时出现错误: {str(e)}"
+            
+    def _generate_vllm_response(self, text_input=None, images=None, audio_text=None, model_name=None):
+        """
+        使用本地 vLLM(OpenAI兼容) 生成响应（不影响原来的 gpt-4o / openai / gemini / doubao）
+        - text_input: 文本输入
+        - images: List[PIL.Image] 已处理好的图片
+        - audio_text: 语音转写文本（可空）
+        - model_name: 透传给 vLLM 的模型名；不传则默认 'qwen3-vl-8b'
+        """
+        if vllm_client is None:
+            return "抱歉，本地 vLLM 服务不可用，请检查 127.0.0.1:9001 是否在运行。"
+
+        try:
+            messages = []
+            messages.extend([
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": USER1},
+                {"role": "assistant", "content": ASSISTANT1},
+                {"role": "user", "content": USER2},
+                {"role": "assistant", "content": ASSISTANT2},
+                {"role": "user", "content": USER3},
+                {"role": "assistant", "content": ASSISTANT3},
+                {"role": "user", "content": USER4},
+                {"role": "assistant", "content": ASSISTANT4}
+            ])
+
+            user_content = []
+            combined_text = ""
+            if text_input:
+                combined_text += text_input
+            if audio_text:
+                combined_text = (combined_text + "\n\n[语音识别内容]: " + audio_text) if combined_text else audio_text
+            if combined_text.strip():
+                user_content.append({"type": "text", "text": combined_text})
+
+            # 与原 /api/chat 的图片处理保持一致：固定 640x480，按需 PNG/JPEG，生成 data URL
+            if images and len(images) > 0:
+                for i, image in enumerate(images):
+                    try:
+                        target_width, target_height, quality = 640, 480, 85
+                        if image.width != target_width or image.height != target_height:
+                            image = image.resize((target_width, target_height), Image.Resampling.LANCZOS)
+                            logger.info(f"[vLLM] 图片 {i+1} 已调整为: {target_width}x{target_height}")
+
+                        buffer = io.BytesIO()
+                        if image.mode in ("RGBA", "LA", "P"):
+                            image.save(buffer, format="PNG", optimize=True)
+                            image_format = "png"
+                        else:
+                            if image.mode != "RGB":
+                                image = image.convert("RGB")
+                            image.save(buffer, format="JPEG", quality=quality, optimize=True)
+                            image_format = "jpeg"
+
+                        buffer.seek(0)
+                        image_data = buffer.getvalue()
+                        image_base64 = base64.b64encode(image_data).decode("utf-8")
+                        size_mb = len(image_data) / (1024 * 1024)
+                        logger.info(f"[vLLM] 图片 {i+1} 转换: {image_format}, {image.width}x{image.height}, {size_mb:.2f}MB")
+
+                        if size_mb > 15:
+                            logger.warning(f"[vLLM] 图片 {i+1} 过大，压缩")
+                            buffer = io.BytesIO()
+                            if image_format == "jpeg":
+                                image.save(buffer, format="JPEG", quality=60, optimize=True)
+                            else:
+                                rgb_image = image.convert("RGB")
+                                rgb_image.save(buffer, format="JPEG", quality=60, optimize=True)
+                                image_format = "jpeg"
+                            buffer.seek(0)
+                            image_data = buffer.getvalue()
+                            image_base64 = base64.b64encode(image_data).decode("utf-8")
+                            size_mb = len(image_data) / (1024 * 1024)
+                            logger.info(f"[vLLM] 图片 {i+1} 压缩后: {size_mb:.2f}MB")
+
+                        user_content.append({
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/{image_format};base64,{image_base64}",
+                                "detail": "high"
+                            }
+                        })
+                    except Exception as e:
+                        logger.error(f"[vLLM] 处理图片 {i+1} 出错: {e}")
+                        try:
+                            buffer = io.BytesIO()
+                            rgb_image = image.convert("RGB")
+                            rgb_image.save(buffer, format="PNG")
+                            buffer.seek(0)
+                            image_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+                            user_content.append({
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/png;base64,{image_base64}", "detail": "high"}
+                            })
+                            logger.info(f"[vLLM] 备用 PNG 转换成功（图片 {i+1}）")
+                        except Exception as backup_error:
+                            logger.error(f"[vLLM] 备用转换失败（图片 {i+1}）: {backup_error}")
+
+            if not user_content:
+                user_content = [{"type": "text", "text": "Hello"}]
+
+            messages.append({"role": "user", "content": user_content})
+
+            # api_model = model_name or "qwen3-vl-8b"  # vLLM 默认模型名，可按你的进程 served name 修改
+            api_model = vllm_client.models.list().data[0].id
+            logger.info(f"[vLLM] 调用 chat.completions.create, model={api_model}")
+
+            max_tokens = 4096
+            start_time = time.time()
+            response = vllm_client.chat.completions.create(
+                model=api_model,
+                messages=messages,
+                max_tokens=max_tokens,
+                temperature=0.8,
+                top_p=0.8
+                # timeout=180
+            )
+            elapsed = time.time() - start_time
+            logger.info(f"[vLLM] 响应耗时: {elapsed:.2f}s")
+
+            if response.choices and len(response.choices) > 0:
+                content = response.choices[0].message.content
+                return content or "抱歉，本地 vLLM 返回了空文本。"
+            return "抱歉，本地 vLLM 没有返回可用结果。"
+
+        except Exception as e:
+            logger.error(f"[vLLM] 调用失败: {e}")
+            emsg = str(e).lower()
+            if "timeout" in emsg:
+                return "抱歉，vLLM 连接超时，请检查本地服务。"
+            elif "invalid" in emsg:
+                return "抱歉，vLLM 请求格式可能无效，请检查输入内容。"
+            else:
+                return f"抱歉，vLLM 处理请求时出现错误: {str(e)}"
     
     def _generate_gemini_response(self, text_input=None, images=None, audio_text=None, model_name=None):
         """使用 Gemini API 生成响应"""
@@ -2158,7 +2303,9 @@ def set_model():
             'doubao-pro-128k',
             # 实时语音模型
             'gpt-4o-realtime-preview',
-            'glm-realtime'
+            'glm-realtime',
+            # 云服务器部署
+            'vllm-local-model'
         ]
         
         if model_name not in supported_models:
@@ -2265,7 +2412,9 @@ def get_model():
             'doubao-pro-128k',
             # 实时语音模型
             'gpt-4o-realtime-preview',
-            'glm-realtime'
+            'glm-realtime',
+            # 云服务器部署
+            'vllm-local-model'
         ]
     })
 
