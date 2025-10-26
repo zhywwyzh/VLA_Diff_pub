@@ -18,14 +18,14 @@ simulation/utils
 ai2thor
 unity
 pipeline/key.py
-# pipeline/__MACOSX
-# pipeline/__pycache__
-# pipeline/doubao_voice
-# pipeline/incoming_images
-# pipeline/logs
-# pipeline/received_images
-# pipeline/received_images
-# pipeline/uploads
+pipeline/__MACOSX
+pipeline/__pycache__
+pipeline/doubao_voice
+pipeline/incoming_images
+pipeline/logs
+pipeline/received_images
+pipeline/received_images
+pipeline/uploads
 .vscode
 output
 own_tools
