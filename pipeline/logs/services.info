@@ -1,0 +1,10 @@
+# Gemini 多模态聊天系统服务信息
+# 启动时间: 2025年 10月 26日 星期日 14:46:14 CST
+
+MAIN_PID=1112369
+MAIN_PORT=1024
+MAIN_LOG=logs/main_service.log
+
+EXTERNAL_PID=1112509
+EXTERNAL_PORT=3000
+EXTERNAL_LOG=logs/external_receiver.log

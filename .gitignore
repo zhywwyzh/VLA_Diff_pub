@@ -17,7 +17,7 @@ ros2_py310
 simulation/utils
 ai2thor
 unity
-pipeline/
+pipeline/key.py
 .vscode
 output
 own_tools

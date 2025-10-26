@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini 2.5 Flash-Lite 多模态聊天</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <div class="main-layout">
+        <!-- 左侧记忆面板 -->
+        <div class="memory-panel">
+            <div class="panel-header">
+                <h3><i class="material-icons">psychology</i> 指令记忆</h3>
+                <div class="panel-controls">
+                    <button onclick="addNewMemory()" class="add-memory-btn" title="新建指令记忆">
+                        <i class="material-icons">add</i>
+                    </button>
+                    <button onclick="exportMemories()" class="export-btn" title="导出指令记忆">
+                        <i class="material-icons">download</i>
+                    </button>
+                    <button onclick="importMemories()" class="import-btn" title="导入指令记忆">
+                        <i class="material-icons">upload</i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="memory-search">
+                <input type="text" id="memory-search" placeholder="搜索指令记忆..." onkeyup="searchMemories()">
+                <i class="material-icons">search</i>
+            </div>
+            
+            <div class="memory-list" id="memory-list">
+                <div class="no-memories">
+                    <i class="material-icons">memory</i>
+                    <p>暂无保存的指令记忆</p>
+                    <small>在操控对话中选择内容保存为指令记忆</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间主要内容 -->
+        <div class="main-content">
+            <header class="header">
+                <h1><i class="material-icons">flight</i> 微分智飞无人机语音操控系统</h1>
+                <p>支持语音、图片、文字指令输入，智能无人机控制</p>
+            </header>
+
+        <!-- 连接状态 -->
+        <div class="status-bar">
+            <div class="status-item">
+                <i class="material-icons" id="connection-icon">cloud_off</i>
+                <span id="connection-status">未连接</span>
+            </div>
+            <div class="status-item model-selector">
+                <i class="material-icons">model_training</i>
+                <select id="model-select" onchange="changeModel()">
+                    <!-- Gemini Models -->
+                    <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+                    <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                    <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                    <option value="gemini-live-2.5-flash-preview">gemini-live-2.5-flash-preview</option>
+                    <option value="gemini-2.5-flash-preview-native-audio-dialog">gemini-2.5-flash-preview-native-audio-dialog</option>
+                    <!-- OpenAI GPT Models -->
+                    <option value="gpt-4o">GPT-4o (OpenAI)</option>
+                    <option value="gpt-4o-mini">GPT-4o-mini (OpenAI)</option>
+                    <!-- 豆包 Models -->
+                    <option value="doubao-seed-1-6-vision-250815">豆包-1.6-视觉版 (字节跳动)</option>
+                    <option value="doubao-lite-4k">豆包-Lite-4k (字节跳动)</option>
+                    <option value="doubao-pro-4k">豆包-Pro-4k (字节跳动)</option>
+                    <option value="doubao-pro-32k">豆包-Pro-32k (字节跳动)</option>
+                    <option value="doubao-pro-128k">豆包-Pro-128k (字节跳动)</option>
+                    <!-- Realtime Models -->
+                    <option value="gpt-4o-realtime-preview">GPT-4o-Realtime (OpenAI)</option>
+                    <option value="glm-realtime">GLM-Realtime (智谱)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 配置面板 -->
+        <div class="config-panel">
+            <h3><i class="material-icons">settings</i> 无人机控制配置</h3>
+            <div class="config-content">
+                <div class="config-row">
+                    <label for="forward-url">外部程序URL:</label>
+                    <input type="text" id="forward-url" placeholder="http://localhost:3000/api/receive" />
+                    <button onclick="setForwardUrl()" class="config-btn">设置</button>
+                    <button onclick="openMonitorWindow()" class="monitor-btn">监听窗口</button>
+                </div>
+                <div id="forward-status" class="config-status"></div>
+                
+                <!-- 无人机指令转发 -->
+                <div class="config-row">
+                    <label for="ros-command">无人机控制指令:</label>
+                    <textarea id="ros-command" placeholder="输入要发送给无人机的控制指令..." rows="3"></textarea>
+                    <button onclick="sendToROS()" class="ros-btn">发送控制指令</button>
+                    <button onclick="fillFromLastMessage()" class="fill-btn">填入AI回复</button>
+                </div>
+                <div id="ros-status" class="config-status"></div>
+                
+                <!-- ChatGLM语速控制 -->
+                <div class="config-row">
+                    <label for="speech-rate">ChatGLM语速:</label>
+                    <div class="speech-rate-control">
+                        <input type="range" id="speech-rate" min="0.3" max="2.0" step="0.1" value="0.8" onchange="updateSpeechRate()" />
+                        <span id="speech-rate-value">0.8x</span>
+                        <div class="speech-rate-presets">
+                            <button onclick="setSpeechRate(0.5)" class="preset-btn">慢速</button>
+                            <button onclick="setSpeechRate(0.8)" class="preset-btn">稍慢</button>
+                            <button onclick="setSpeechRate(1.0)" class="preset-btn">正常</button>
+                            <button onclick="setSpeechRate(1.2)" class="preset-btn">稍快</button>
+                            <button onclick="setSpeechRate(1.5)" class="preset-btn">快速</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="speech-rate-status" class="config-status"></div>
+                
+                <!-- 豆包深度思考控制 -->
+                <div class="config-row" id="doubao-thinking-row" style="display: none;">
+                    <label for="doubao-thinking">豆包深度思考:</label>
+                    <div class="thinking-control">
+                        <label class="switch">
+                            <input type="checkbox" id="doubao-thinking" checked onchange="updateDoubaoThinking()">
+                            <span class="slider round"></span>
+                        </label>
+                        <span id="thinking-status" class="thinking-status">已启用</span>
+                        <button onclick="loadDoubaoThinkingConfig()" class="reload-btn" title="重新加载配置">
+                            <i class="material-icons">refresh</i>
+                        </button>
+                    </div>
+                    <small class="config-note">深度思考可提供更周全的回答，但会稍微增加响应时间</small>
+                </div>
+                <div id="thinking-config-status" class="config-status"></div>
+                
+                <!-- 实时模型控制 -->
+                <div class="config-row" id="realtime-controls" style="display: none;">
+                    <label>实时语音对话控制:</label>
+                    <div class="realtime-control-buttons">
+                        <button onclick="startVoiceChat()" id="voice-chat-btn" class="voice-chat-btn" style="background: #28a745; color: white; font-size: 16px; padding: 12px 24px; border-radius: 8px;">
+                            🎤 开始语音对话
+                        </button>
+                        <button onclick="stopVoiceChat()" id="stop-voice-chat-btn" class="voice-chat-btn" disabled style="background: #dc3545; color: white; font-size: 16px; padding: 12px 24px; border-radius: 8px;">
+                            ⏹️ 停止对话
+                        </button>
+                        <button onclick="checkRealtimeStatus()" class="realtime-btn">检查状态</button>
+                    </div>
+                    <div class="realtime-info">
+                        <small>🎤 点击"开始语音对话"按钮，系统会自动连接并开始实时语音交流</small>
+                        <small>💬 直接说话即可，AI会实时回复（语音+文字）</small>
+                        <small>⏹️ 说完后点击"停止对话"结束会话</small>
+                    </div>
+                    <div id="voice-chat-status" class="voice-status">
+                        <span>🔴 未连接 - 点击开始语音对话</span>
+                    </div>
+                </div>
+                <div id="realtime-status" class="config-status"></div>
+            </div>
+        </div>
+
+        <!-- 操控界面 -->
+        <div class="chat-container">
+            <div class="chat-messages" id="chat-messages">
+                <div class="welcome-message">
+                    <i class="material-icons">flight_takeoff</i>
+                    <p>欢迎使用微分智飞无人机语音操控系统！</p>
+                    <p>您可以通过语音、文字或图片指令控制无人机。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="input-container">
+            <!-- 指令输入 -->
+            <div class="text-input-area">
+                <input type="text" id="text-input" placeholder="输入无人机控制指令..." />
+                <button onclick="sendTextMessage()" id="send-btn">
+                    <i class="material-icons">send</i>
+                </button>
+            </div>
+
+            <!-- 多媒体控制 -->
+            <div class="media-controls">
+                <!-- 语音指令 -->
+                <div class="voice-control">
+                    <button id="voice-btn" onclick="toggleVoiceRecording()">
+                        <i class="material-icons">mic</i>
+                    </button>
+                    <span class="control-label">语音指令</span>
+                </div>
+
+                <!-- 图片分析 -->
+                <div class="image-control">
+                    <button onclick="document.getElementById('image-upload').click()">
+                        <i class="material-icons">photo_camera</i>
+                    </button>
+                    <span class="control-label">图片分析</span>
+                    <input type="file" id="image-upload" accept="image/*" multiple style="display: none;" onchange="handleImageUpload(event)" />
+                </div>
+
+                <!-- 清除记录 -->
+                <div class="clear-control">
+                    <button onclick="clearHistory()">
+                        <i class="material-icons">clear_all</i>
+                    </button>
+                    <span class="control-label">清除记录</span>
+                </div>
+            </div>
+
+            <!-- 图片预览 -->
+            <div id="image-preview" class="image-preview"></div>
+
+            <!-- 录音状态 -->
+            <div id="recording-status" class="recording-status" style="display: none;">
+                <div class="recording-indicator">
+                    <i class="material-icons">mic</i>
+                    <span>正在录音...</span>
+                    <div class="recording-animation"></div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <!-- 右侧消息面板 -->
+        <div class="side-panel">
+            <div class="panel-header">
+                <h3><i class="material-icons">sensors</i> 无人机状态</h3>
+                            <div class="panel-controls">
+                <button onclick="openMessageSender()" class="send-test-btn" title="测试模块">
+                    <i class="material-icons">bug_report</i>
+                </button>
+                <button onclick="refreshIncomingMessages()" class="refresh-btn" title="刷新状态">
+                    <i class="material-icons">refresh</i>
+                </button>
+                <button onclick="markAllRead()" class="mark-read-btn" title="全部已读">
+                    <i class="material-icons">done_all</i>
+                </button>
+                <button onclick="clearIncomingMessages()" class="clear-btn" title="清空记录">
+                    <i class="material-icons">clear</i>
+                </button>
+            </div>
+            </div>
+            
+            <div class="panel-stats">
+                <span id="message-count">0 条状态</span>
+                <span id="unread-count" class="unread-badge">0 未读</span>
+            </div>
+            
+            <div class="incoming-messages" id="incoming-messages">
+                <div class="no-messages">
+                    <i class="material-icons">flight</i>
+                    <p>暂无无人机状态信息</p>
+                    <small>无人机状态通过 3001 端口接收</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 音频播放器 -->
+    <audio id="audio-player" style="display: none;"></audio>
+
+    <!-- 加载提示 -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <i class="material-icons">hourglass_empty</i>
+            <p>正在处理...</p>
+        </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div id="toast-container" class="toast-container"></div>
+    
+    <!-- 隐藏的文件输入框 -->
+    <input type="file" id="memory-import-file" accept=".json" style="display: none;" />
+
+    <script src="script.js"></script>
+</body>
+</html>

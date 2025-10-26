@@ -1,0 +1,25 @@
+{
+  "name": "gemini-text-listener",
+  "version": "1.0.0",
+  "description": "Node.js文字监听器，用于接收Gemini聊天系统转发的文字内容",
+  "main": "nodejs_listener.js",
+  "scripts": {
+    "start": "node nodejs_listener.js",
+    "dev": "nodemon nodejs_listener.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  },
+  "keywords": [
+    "gemini",
+    "text",
+    "listener",
+    "api",
+    "webhook"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

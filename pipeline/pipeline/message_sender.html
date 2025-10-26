@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息发送器 - 3001端口测试</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #9C27B0, #673AB7);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .form-container {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #9C27B0;
+            box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #9C27B0, #673AB7);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(156, 39, 176, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+        }
+
+        .btn.secondary:hover {
+            background: #5a6268;
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        .btn.success {
+            background: #28a745;
+        }
+
+        .btn.success:hover {
+            background: #218838;
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .quick-messages {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .quick-messages h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        .quick-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #495057;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            margin: 4px;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }
+
+        .quick-btn:hover {
+            background: #e9ecef;
+            border-color: #9C27B0;
+            color: #9C27B0;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .connection-status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .connection-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #dc3545;
+        }
+
+        .indicator.connected {
+            background: #28a745;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <i class="material-icons">send</i>
+                消息发送器
+            </h1>
+            <p>向3001端口发送测试消息</p>
+        </div>
+
+        <div class="form-container">
+            <!-- 连接状态 -->
+            <div id="connection-status" class="connection-status disconnected">
+                <div class="indicator" id="status-indicator"></div>
+                <span id="status-text">检查连接中...</span>
+            </div>
+
+            <!-- 发送表单 -->
+            <form id="message-form">
+                <div class="form-group">
+                    <label for="message-text">消息内容 *</label>
+                    <textarea id="message-text" placeholder="请输入要发送的消息内容..." required></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sender">发送者</label>
+                        <input type="text" id="sender" placeholder="发送者名称" value="测试发送器">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message-type">消息类型</label>
+                        <select id="message-type">
+                            <option value="text">普通文本</option>
+                            <option value="query">查询</option>
+                            <option value="command">命令</option>
+                            <option value="notification">通知</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="priority">优先级</label>
+                    <select id="priority">
+                        <option value="normal">普通</option>
+                        <option value="high">高</option>
+                        <option value="urgent">紧急</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn">
+                    <i class="material-icons">send</i>
+                    发送消息
+                </button>
+
+                <button type="button" class="btn secondary" onclick="clearForm()">
+                    <i class="material-icons">clear</i>
+                    清空表单
+                </button>
+
+                <button type="button" class="btn success" onclick="sendRandomMessage()">
+                    <i class="material-icons">shuffle</i>
+                    发送随机消息
+                </button>
+            </form>
+
+            <!-- 状态显示 -->
+            <div id="status" class="status"></div>
+
+            <!-- 快速消息 -->
+            <div class="quick-messages">
+                <h3>快速消息模板</h3>
+                <div class="quick-btn" onclick="fillMessage('你好，这是一条测试消息', '测试程序', 'text', 'normal')">
+                    测试消息
+                </div>
+                <div class="quick-btn" onclick="fillMessage('请帮我分析当前系统状态', '监控系统', 'query', 'normal')">
+                    系统查询
+                </div>
+                <div class="quick-btn" onclick="fillMessage('检测到异常情况，需要立即处理', '告警系统', 'notification', 'high')">
+                    异常告警
+                </div>
+                <div class="quick-btn" onclick="fillMessage('执行紧急维护任务', '运维系统', 'command', 'urgent')">
+                    紧急命令
+                </div>
+                <div class="quick-btn" onclick="fillMessage('CPU使用率较高，当前为85%，请检查系统负载', '性能监控', 'notification', 'high')">
+                    性能警告
+                </div>
+                <div class="quick-btn" onclick="fillMessage('用户登录失败次数过多，可能存在安全风险', '安全系统', 'notification', 'urgent')">
+                    安全警告
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/api/send';
+        const HEALTH_URL = 'http://localhost:3001/api/health';
+        let isConnected = false;
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            checkConnection();
+            setupForm();
+            
+            // 定期检查连接状态
+            setInterval(checkConnection, 5000);
+        });
+
+        // 检查连接状态
+        async function checkConnection() {
+            try {
+                const response = await fetch(HEALTH_URL, { timeout: 3000 });
+                if (response.ok) {
+                    setConnectionStatus(true, '服务连接正常');
+                } else {
+                    setConnectionStatus(false, '服务响应异常');
+                }
+            } catch (error) {
+                setConnectionStatus(false, '无法连接到服务');
+            }
+        }
+
+        // 设置连接状态
+        function setConnectionStatus(connected, message) {
+            isConnected = connected;
+            const statusEl = document.getElementById('connection-status');
+            const indicatorEl = document.getElementById('status-indicator');
+            const textEl = document.getElementById('status-text');
+
+            if (connected) {
+                statusEl.className = 'connection-status connected';
+                indicatorEl.className = 'indicator connected';
+                textEl.textContent = message;
+            } else {
+                statusEl.className = 'connection-status disconnected';
+                indicatorEl.className = 'indicator';
+                textEl.textContent = message;
+            }
+        }
+
+        // 设置表单
+        function setupForm() {
+            const form = document.getElementById('message-form');
+            form.addEventListener('submit', handleSubmit);
+        }
+
+        // 处理表单提交
+        async function handleSubmit(event) {
+            event.preventDefault();
+
+            if (!isConnected) {
+                showStatus('服务未连接，无法发送消息', 'error');
+                return;
+            }
+
+            const messageText = document.getElementById('message-text').value.trim();
+            const sender = document.getElementById('sender').value.trim() || '测试发送器';
+            const messageType = document.getElementById('message-type').value;
+            const priority = document.getElementById('priority').value;
+
+            if (!messageText) {
+                showStatus('请输入消息内容', 'error');
+                return;
+            }
+
+            try {
+                showStatus('发送中...', 'info');
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: messageText,
+                        sender: sender,
+                        type: messageType,
+                        priority: priority
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        showStatus(`消息发送成功！ID: ${result.message_id}`, 'success');
+                        // 清空消息内容，但保留其他设置
+                        document.getElementById('message-text').value = '';
+                    } else {
+                        showStatus(`发送失败: ${result.error}`, 'error');
+                    }
+                } else {
+                    showStatus(`HTTP错误: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`发送异常: ${error.message}`, 'error');
+            }
+        }
+
+        // 显示状态消息
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+            statusEl.style.display = 'block';
+
+            // 3秒后自动隐藏成功消息
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // 填充消息模板
+        function fillMessage(text, sender, type, priority) {
+            document.getElementById('message-text').value = text;
+            document.getElementById('sender').value = sender;
+            document.getElementById('message-type').value = type;
+            document.getElementById('priority').value = priority;
+        }
+
+        // 清空表单
+        function clearForm() {
+            document.getElementById('message-text').value = '';
+            document.getElementById('sender').value = '测试发送器';
+            document.getElementById('message-type').value = 'text';
+            document.getElementById('priority').value = 'normal';
+            showStatus('表单已清空', 'success');
+        }
+
+        // 发送随机消息
+        function sendRandomMessage() {
+            const randomMessages = [
+                {
+                    text: `随机测试消息 - ${new Date().toLocaleTimeString()}`,
+                    sender: '随机发送器',
+                    type: 'text',
+                    priority: 'normal'
+                },
+                {
+                    text: `系统状态检查 - ${Math.floor(Math.random() * 100)}% CPU使用率`,
+                    sender: '系统监控',
+                    type: 'notification',
+                    priority: 'normal'
+                },
+                {
+                    text: '这是一条自动生成的测试消息，用于验证消息传输功能',
+                    sender: '自动化测试',
+                    type: 'query',
+                    priority: 'normal'
+                }
+            ];
+
+            const randomMsg = randomMessages[Math.floor(Math.random() * randomMessages.length)];
+            fillMessage(randomMsg.text, randomMsg.sender, randomMsg.type, randomMsg.priority);
+            
+            // 自动发送
+            setTimeout(() => {
+                document.getElementById('message-form').requestSubmit();
+            }, 500);
+        }
+
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + Enter 发送消息
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('message-form').requestSubmit();
+            }
+            
+            // Escape 清空表单
+            if (e.key === 'Escape') {
+                clearForm();
+            }
+        });
+    </script>
+</body>
+</html>

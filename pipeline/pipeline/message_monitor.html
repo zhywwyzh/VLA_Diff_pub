@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 消息监听窗口</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .stats-bar {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e9ecef;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+        }
+
+        .stat-content {
+            flex: 1;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .auto-refresh input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .messages-container {
+            height: 500px;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        .message-item {
+            padding: 20px 30px;
+            border-bottom: 1px solid #e9ecef;
+            transition: background-color 0.2s ease;
+        }
+
+        .message-item:hover {
+            background: #f8f9fa;
+        }
+
+        .message-item:last-child {
+            border-bottom: none;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .message-id {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .message-time {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .message-content {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            line-height: 1.6;
+            color: #2d3748;
+        }
+
+        .message-meta {
+            margin-top: 10px;
+            display: flex;
+            gap: 20px;
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .no-messages {
+            text-align: center;
+            padding: 60px 30px;
+            color: #6c757d;
+        }
+
+        .no-messages .icon {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 20px;
+        }
+
+        .refresh-indicator {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .status-online {
+            color: #28a745;
+        }
+
+        .status-offline {
+            color: #dc3545;
+        }
+
+        .new-message {
+            background: #e8f5e8 !important;
+            border-left: 4px solid #28a745 !important;
+        }
+
+        .scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                🔍 消息监听窗口
+            </h1>
+            <p>实时监控来自 Gemini 聊天系统的转发消息</p>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-icon" style="background: #28a745;">📊</div>
+                <div class="stat-content">
+                    <div class="stat-label">总消息数</div>
+                    <div class="stat-value" id="total-count">-</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon" style="background: #007bff;">🕒</div>
+                <div class="stat-content">
+                    <div class="stat-label">最后更新</div>
+                    <div class="stat-value" id="last-update">-</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon" style="background: #ffc107;">📏</div>
+                <div class="stat-content">
+                    <div class="stat-label">平均长度</div>
+                    <div class="stat-value" id="avg-length">-</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon" style="background: #17a2b8;">🔗</div>
+                <div class="stat-content">
+                    <div class="stat-label">连接状态</div>
+                    <div class="stat-value" id="connection-status">检查中...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="refreshMessages()">
+                <span id="refresh-icon">🔄</span> 刷新消息
+            </button>
+            <button class="btn btn-danger" onclick="clearMessages()">
+                🗑️ 清空消息
+            </button>
+            <div class="auto-refresh">
+                <input type="checkbox" id="auto-refresh" checked>
+                <label for="auto-refresh">自动刷新 (5秒)</label>
+            </div>
+        </div>
+
+        <div class="messages-container scrollbar" id="messages-container">
+            <div class="no-messages">
+                <div class="icon">📭</div>
+                <h3>暂无消息</h3>
+                <p>等待来自 Gemini 聊天系统的转发消息...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let lastMessageCount = 0;
+        let autoRefreshInterval;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            checkConnection();
+            refreshMessages();
+            startAutoRefresh();
+        });
+
+        // 检查连接状态
+        async function checkConnection() {
+            try {
+                const response = await fetch('http://localhost:3000/api/health');
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateConnectionStatus('在线', 'status-online');
+                } else {
+                    updateConnectionStatus('离线', 'status-offline');
+                }
+            } catch (error) {
+                updateConnectionStatus('离线', 'status-offline');
+            }
+        }
+
+        // 更新连接状态
+        function updateConnectionStatus(status, className) {
+            const statusElement = document.getElementById('connection-status');
+            statusElement.textContent = status;
+            statusElement.className = `stat-value ${className}`;
+        }
+
+        // 刷新消息
+        async function refreshMessages() {
+            const refreshIcon = document.getElementById('refresh-icon');
+            refreshIcon.classList.add('refresh-indicator');
+
+            try {
+                // 获取消息列表
+                const messagesResponse = await fetch('http://localhost:3000/api/messages');
+                const messagesResult = await messagesResponse.json();
+
+                // 获取统计信息
+                const statsResponse = await fetch('http://localhost:3000/api/stats');
+                const statsResult = await statsResponse.json();
+
+                if (messagesResult.success) {
+                    displayMessages(messagesResult.messages);
+                    updateStats(statsResult.stats);
+                    
+                    // 检查是否有新消息
+                    if (messagesResult.total > lastMessageCount) {
+                        // 有新消息，播放提示音
+                        playNotificationSound();
+                        // 高亮新消息
+                        highlightNewMessages(lastMessageCount);
+                    }
+                    lastMessageCount = messagesResult.total;
+                }
+            } catch (error) {
+                console.error('刷新消息失败:', error);
+                updateConnectionStatus('连接失败', 'status-offline');
+            }
+
+            setTimeout(() => {
+                refreshIcon.classList.remove('refresh-indicator');
+            }, 500);
+        }
+
+        // 显示消息
+        function displayMessages(messages) {
+            const container = document.getElementById('messages-container');
+            
+            if (!messages || messages.length === 0) {
+                container.innerHTML = `
+                    <div class="no-messages">
+                        <div class="icon">📭</div>
+                        <h3>暂无消息</h3>
+                        <p>等待来自 Gemini 聊天系统的转发消息...</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const messagesHtml = messages.reverse().map(message => `
+                <div class="message-item" data-message-id="${message.id}">
+                    <div class="message-header">
+                        <span class="message-id">#${message.id}</span>
+                        <span class="message-time">${formatTime(message.received_at)}</span>
+                    </div>
+                    <div class="message-content">
+                        ${escapeHtml(message.text)}
+                    </div>
+                    <div class="message-meta">
+                        <span>来源: ${message.source}</span>
+                        <span>长度: ${message.length} 字符</span>
+                        <span>时间: ${message.timestamp}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = messagesHtml;
+            
+            // 滚动到顶部显示最新消息
+            container.scrollTop = 0;
+        }
+
+        // 更新统计信息
+        function updateStats(stats) {
+            if (!stats) return;
+
+            document.getElementById('total-count').textContent = stats.total_messages || 0;
+            document.getElementById('avg-length').textContent = 
+                stats.average_length ? `${stats.average_length} 字符` : '-';
+            
+            if (stats.last_message) {
+                document.getElementById('last-update').textContent = 
+                    formatTime(stats.last_message);
+            }
+        }
+
+        // 高亮新消息
+        function highlightNewMessages(oldCount) {
+            const messageItems = document.querySelectorAll('.message-item');
+            const newMessagesCount = messageItems.length - oldCount;
+            
+            for (let i = 0; i < newMessagesCount && i < messageItems.length; i++) {
+                messageItems[i].classList.add('new-message');
+                setTimeout(() => {
+                    messageItems[i].classList.remove('new-message');
+                }, 3000);
+            }
+        }
+
+        // 清空消息
+        async function clearMessages() {
+            if (!confirm('确定要清空所有消息吗？此操作不可恢复。')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/clear', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    lastMessageCount = 0;
+                    refreshMessages();
+                    alert('消息已清空');
+                }
+            } catch (error) {
+                alert('清空失败: ' + error.message);
+            }
+        }
+
+        // 开始自动刷新
+        function startAutoRefresh() {
+            const checkbox = document.getElementById('auto-refresh');
+            
+            function toggleAutoRefresh() {
+                if (checkbox.checked) {
+                    autoRefreshInterval = setInterval(() => {
+                        refreshMessages();
+                        checkConnection();
+                    }, 5000);
+                } else {
+                    clearInterval(autoRefreshInterval);
+                }
+            }
+
+            checkbox.addEventListener('change', toggleAutoRefresh);
+            toggleAutoRefresh();
+        }
+
+        // 播放提示音
+        function playNotificationSound() {
+            try {
+                // 使用 Web Audio API 播放简单的提示音
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (error) {
+                console.log('无法播放提示音:', error);
+            }
+        }
+
+        // 格式化时间
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+
+            if (diff < 60000) { // 1分钟内
+                return '刚刚';
+            } else if (diff < 3600000) { // 1小时内
+                return `${Math.floor(diff / 60000)} 分钟前`;
+            } else if (diff < 86400000) { // 24小时内
+                return `${Math.floor(diff / 3600000)} 小时前`;
+            } else {
+                return date.toLocaleString('zh-CN');
+            }
+        }
+
+        // HTML 转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 页面失去焦点时降低刷新频率
+        document.addEventListener('visibilitychange', function() {
+            const checkbox = document.getElementById('auto-refresh');
+            if (document.hidden) {
+                // 页面不可见时降低刷新频率到30秒
+                clearInterval(autoRefreshInterval);
+                if (checkbox.checked) {
+                    autoRefreshInterval = setInterval(() => {
+                        refreshMessages();
+                        checkConnection();
+                    }, 30000);
+                }
+            } else {
+                // 页面可见时恢复正常刷新频率
+                clearInterval(autoRefreshInterval);
+                if (checkbox.checked) {
+                    autoRefreshInterval = setInterval(() => {
+                        refreshMessages();
+                        checkConnection();
+                    }, 5000);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

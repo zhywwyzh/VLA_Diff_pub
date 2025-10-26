@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>无人机测试模块 - 状态发送器</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #9C27B0, #673AB7);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .form-container {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #9C27B0;
+            box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #9C27B0, #673AB7);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(156, 39, 176, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+        }
+
+        .btn.secondary:hover {
+            background: #5a6268;
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        .btn.success {
+            background: #28a745;
+        }
+
+        .btn.success:hover {
+            background: #218838;
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .quick-messages {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .quick-messages h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        .quick-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #495057;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            margin: 4px;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }
+
+        .quick-btn:hover {
+            background: #e9ecef;
+            border-color: #9C27B0;
+            color: #9C27B0;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .connection-status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .connection-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #dc3545;
+        }
+
+        .indicator.connected {
+            background: #28a745;
+        }
+
+        /* 图片上传样式 */
+        .image-upload-area {
+            border: 2px dashed #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .image-upload-area:hover {
+            border-color: #9C27B0;
+            background: #f8f5ff;
+        }
+
+        .upload-placeholder {
+            color: #666;
+        }
+
+        .upload-placeholder i {
+            font-size: 2rem;
+            color: #9C27B0;
+            margin-bottom: 10px;
+        }
+
+        .upload-placeholder p {
+            margin: 5px 0;
+            font-weight: 500;
+        }
+
+        .upload-placeholder small {
+            color: #999;
+            font-size: 0.8rem;
+        }
+
+        .image-preview-container {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .image-preview-item {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #e0e0e0;
+        }
+
+        .image-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-remove-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            line-height: 1;
+        }
+
+        .image-remove-btn:hover {
+            background: #c82333;
+        }
+
+        .image-count-badge {
+            background: #9C27B0;
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <i class="material-icons">bug_report</i>
+                无人机测试模块
+            </h1>
+            <p>向操控系统发送测试状态信息 (支持图片)</p>
+        </div>
+
+        <div class="form-container">
+            <!-- 连接状态 -->
+            <div id="connection-status" class="connection-status disconnected">
+                <div class="indicator" id="status-indicator"></div>
+                <span id="status-text">检查连接中...</span>
+            </div>
+
+            <!-- 发送表单 -->
+            <form id="message-form">
+                <div class="form-group">
+                    <label for="message-text">状态信息内容 *</label>
+                    <textarea id="message-text" placeholder="请输入无人机状态信息..." required></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sender">信息来源</label>
+                        <input type="text" id="sender" placeholder="信息来源" value="无人机系统">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message-type">状态类型</label>
+                        <select id="message-type">
+                            <option value="status">状态报告</option>
+                            <option value="alert">警报信息</option>
+                            <option value="command_result">指令结果</option>
+                            <option value="system_info">系统信息</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="priority">优先级</label>
+                    <select id="priority">
+                        <option value="normal">普通</option>
+                        <option value="high">高</option>
+                        <option value="urgent">紧急</option>
+                    </select>
+                </div>
+
+                <!-- 图片上传区域 -->
+                <div class="form-group">
+                    <label for="image-upload">
+                        <i class="material-icons">photo_camera</i>
+                        图片上传 (可选)
+                    </label>
+                    <input type="file" id="image-upload" accept="image/*" multiple style="display: none;" onchange="handleImageUpload(event)" />
+                    <div class="image-upload-area" onclick="document.getElementById('image-upload').click()">
+                        <div class="upload-placeholder">
+                            <i class="material-icons">add_photo_alternate</i>
+                            <p>点击上传图片 (支持多张)</p>
+                            <small>支持 JPG, PNG, GIF 格式</small>
+                        </div>
+                    </div>
+                    <div id="image-preview" class="image-preview-container"></div>
+                </div>
+
+                <button type="submit" class="btn">
+                    <i class="material-icons">send</i>
+                    发送状态信息
+                </button>
+
+                <button type="button" class="btn secondary" onclick="clearForm()">
+                    <i class="material-icons">clear</i>
+                    清空表单
+                </button>
+
+                <button type="button" class="btn success" onclick="sendRandomMessage()">
+                    <i class="material-icons">shuffle</i>
+                    发送随机状态
+                </button>
+            </form>
+
+            <!-- 状态显示 -->
+            <div id="status" class="status"></div>
+
+            <!-- 快速状态模板 -->
+            <div class="quick-messages">
+                <h3>快速状态模板</h3>
+                <div class="quick-btn" onclick="fillMessage('无人机系统正常运行', '无人机系统', 'status', 'normal')">
+                    正常状态
+                </div>
+                <div class="quick-btn" onclick="fillMessage('电池电量：85%，飞行时间剩余20分钟', '电池监控', 'status', 'normal')">
+                    电池状态
+                </div>
+                <div class="quick-btn" onclick="fillMessage('检测到低电量警告，当前电量15%', '电池监控', 'alert', 'high')">
+                    低电量警告
+                </div>
+                <div class="quick-btn" onclick="fillMessage('起飞指令执行完成，当前高度50米', '飞行控制', 'command_result', 'normal')">
+                    起飞完成
+                </div>
+                <div class="quick-btn" onclick="fillMessage('GPS信号弱，定位精度降低', '导航系统', 'alert', 'high')">
+                    GPS警告
+                </div>
+                <div class="quick-btn" onclick="fillMessage('检测到强风，建议降低飞行高度', '环境监测', 'alert', 'urgent')">
+                    天气警告
+                </div>
+                <div class="quick-btn" onclick="fillMessage('请分析无人机摄像头捕获的图像', '视觉系统', 'status', 'normal')">
+                    图像分析
+                </div>
+                <div class="quick-btn" onclick="sendTestImages()">
+                    发送测试图像
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/api/send';
+        const HEALTH_URL = 'http://localhost:3001/api/health';
+        let isConnected = false;
+        let selectedImages = []; // 存储选中的图片
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            checkConnection();
+            setupForm();
+            
+            // 定期检查连接状态
+            setInterval(checkConnection, 5000);
+        });
+
+        // 检查连接状态
+        async function checkConnection() {
+            try {
+                const response = await fetch(HEALTH_URL, { timeout: 3000 });
+                if (response.ok) {
+                    setConnectionStatus(true, '服务连接正常');
+                } else {
+                    setConnectionStatus(false, '服务响应异常');
+                }
+            } catch (error) {
+                setConnectionStatus(false, '无法连接到服务');
+            }
+        }
+
+        // 设置连接状态
+        function setConnectionStatus(connected, message) {
+            isConnected = connected;
+            const statusEl = document.getElementById('connection-status');
+            const indicatorEl = document.getElementById('status-indicator');
+            const textEl = document.getElementById('status-text');
+
+            if (connected) {
+                statusEl.className = 'connection-status connected';
+                indicatorEl.className = 'indicator connected';
+                textEl.textContent = message;
+            } else {
+                statusEl.className = 'connection-status disconnected';
+                indicatorEl.className = 'indicator';
+                textEl.textContent = message;
+            }
+        }
+
+        // 设置表单
+        function setupForm() {
+            const form = document.getElementById('message-form');
+            form.addEventListener('submit', handleSubmit);
+        }
+
+        // 处理表单提交
+        async function handleSubmit(event) {
+            event.preventDefault();
+
+            if (!isConnected) {
+                showStatus('服务未连接，无法发送状态信息', 'error');
+                return;
+            }
+
+            const messageText = document.getElementById('message-text').value.trim();
+            const sender = document.getElementById('sender').value.trim() || '无人机系统';
+            const messageType = document.getElementById('message-type').value;
+            const priority = document.getElementById('priority').value;
+
+            if (!messageText) {
+                showStatus('请输入状态信息内容', 'error');
+                return;
+            }
+
+            try {
+                showStatus('发送中...', 'info');
+                
+                // 准备图片信息
+                const imagesInfo = await prepareImagesInfo();
+                
+                const requestData = {
+                    text: messageText,
+                    sender: sender,
+                    type: messageType,
+                    priority: priority
+                };
+
+                // 如果有图片，添加图片信息
+                if (imagesInfo.length > 0) {
+                    requestData.images_info = imagesInfo;
+                    requestData.image_count = imagesInfo.length;
+                }
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        const imageText = imagesInfo.length > 0 ? ` (包含${imagesInfo.length}张图片)` : '';
+                        showStatus(`状态信息发送成功！ID: ${result.message_id}${imageText}`, 'success');
+                        // 清空状态内容和图片，但保留其他设置
+                        document.getElementById('message-text').value = '';
+                        clearImages();
+                    } else {
+                        showStatus(`发送失败: ${result.error}`, 'error');
+                    }
+                } else {
+                    showStatus(`HTTP错误: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`发送异常: ${error.message}`, 'error');
+            }
+        }
+
+        // 显示状态消息
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+            statusEl.style.display = 'block';
+
+            // 3秒后自动隐藏成功消息
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // 填充消息模板
+        function fillMessage(text, sender, type, priority) {
+            document.getElementById('message-text').value = text;
+            document.getElementById('sender').value = sender;
+            document.getElementById('message-type').value = type;
+            document.getElementById('priority').value = priority;
+        }
+
+        // 清空表单
+        function clearForm() {
+            document.getElementById('message-text').value = '';
+            document.getElementById('sender').value = '测试发送器';
+            document.getElementById('message-type').value = 'text';
+            document.getElementById('priority').value = 'normal';
+            showStatus('表单已清空', 'success');
+        }
+
+        // 发送随机消息
+        function sendRandomMessage() {
+            const randomMessages = [
+                {
+                    text: `随机测试消息 - ${new Date().toLocaleTimeString()}`,
+                    sender: '随机发送器',
+                    type: 'text',
+                    priority: 'normal'
+                },
+                {
+                    text: `系统状态检查 - ${Math.floor(Math.random() * 100)}% CPU使用率`,
+                    sender: '系统监控',
+                    type: 'notification',
+                    priority: 'normal'
+                },
+                {
+                    text: '这是一条自动生成的测试消息，用于验证消息传输功能',
+                    sender: '自动化测试',
+                    type: 'query',
+                    priority: 'normal'
+                }
+            ];
+
+            const randomMsg = randomMessages[Math.floor(Math.random() * randomMessages.length)];
+            fillMessage(randomMsg.text, randomMsg.sender, randomMsg.type, randomMsg.priority);
+            
+            // 自动发送
+            setTimeout(() => {
+                document.getElementById('message-form').requestSubmit();
+            }, 500);
+        }
+
+        // 处理图片上传
+        function handleImageUpload(event) {
+            const files = Array.from(event.target.files);
+            
+            if (files.length === 0) return;
+            
+            // 限制图片数量
+            const maxImages = 5;
+            const currentCount = selectedImages.length;
+            const newFiles = files.slice(0, maxImages - currentCount);
+            
+            if (files.length > newFiles.length) {
+                showStatus(`最多只能上传${maxImages}张图片，已选择前${newFiles.length}张`, 'error');
+            }
+            
+            // 处理每个图片文件
+            newFiles.forEach(file => {
+                if (!file.type.startsWith('image/')) {
+                    showStatus(`文件 ${file.name} 不是图片格式`, 'error');
+                    return;
+                }
+                
+                // 限制文件大小 (10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                    showStatus(`图片 ${file.name} 过大，请选择小于10MB的图片`, 'error');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageData = {
+                        file: file,
+                        data: e.target.result,
+                        name: file.name,
+                        size: `${(file.size / 1024).toFixed(1)}KB`
+                    };
+                    
+                    selectedImages.push(imageData);
+                    updateImagePreview();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // 更新图片预览
+        function updateImagePreview() {
+            const previewContainer = document.getElementById('image-preview');
+            const label = document.querySelector('label[for="image-upload"]');
+            
+            // 更新标签显示图片数量
+            if (selectedImages.length > 0) {
+                const badge = label.querySelector('.image-count-badge') || document.createElement('span');
+                badge.className = 'image-count-badge';
+                badge.textContent = selectedImages.length;
+                if (!label.querySelector('.image-count-badge')) {
+                    label.appendChild(badge);
+                }
+            } else {
+                const badge = label.querySelector('.image-count-badge');
+                if (badge) badge.remove();
+            }
+            
+            // 清空预览容器
+            previewContainer.innerHTML = '';
+            
+            // 添加图片预览
+            selectedImages.forEach((imageData, index) => {
+                const previewItem = document.createElement('div');
+                previewItem.className = 'image-preview-item';
+                previewItem.innerHTML = `
+                    <img src="${imageData.data}" alt="${imageData.name}" title="${imageData.name} (${imageData.size})">
+                    <button class="image-remove-btn" onclick="removeImage(${index})" title="删除图片">×</button>
+                `;
+                previewContainer.appendChild(previewItem);
+            });
+            
+            // 如果有图片，隐藏上传提示
+            const uploadArea = document.querySelector('.image-upload-area .upload-placeholder');
+            if (selectedImages.length > 0) {
+                uploadArea.style.display = 'none';
+            } else {
+                uploadArea.style.display = 'block';
+            }
+        }
+        
+        // 删除图片
+        function removeImage(index) {
+            selectedImages.splice(index, 1);
+            updateImagePreview();
+            showStatus('图片已删除', 'success');
+        }
+        
+        // 清空图片
+        function clearImages() {
+            selectedImages = [];
+            updateImagePreview();
+            document.getElementById('image-upload').value = '';
+        }
+        
+        // 准备图片信息用于发送
+        async function prepareImagesInfo() {
+            const imagesInfo = [];
+            
+            for (let i = 0; i < selectedImages.length; i++) {
+                const imageData = selectedImages[i];
+                
+                try {
+                    // 压缩图片
+                    const compressedData = await compressImage(imageData.data, 0.8, 1024);
+                    
+                    imagesInfo.push({
+                        index: i + 1,
+                        filename: imageData.name,
+                        format: imageData.file.type.split('/')[1].toUpperCase(),
+                        size: await getImageDimensions(compressedData),
+                        data: compressedData
+                    });
+                } catch (error) {
+                    console.error(`处理图片 ${imageData.name} 时出错:`, error);
+                    imagesInfo.push({
+                        index: i + 1,
+                        filename: imageData.name,
+                        format: 'unknown',
+                        size: 'unknown',
+                        error: error.message
+                    });
+                }
+            }
+            
+            return imagesInfo;
+        }
+        
+        // 压缩图片
+        function compressImage(dataUrl, quality = 0.8, maxWidth = 1024) {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    // 计算压缩后的尺寸
+                    let { width, height } = img;
+                    if (width > maxWidth || height > maxWidth) {
+                        if (width > height) {
+                            height = (height * maxWidth) / width;
+                            width = maxWidth;
+                        } else {
+                            width = (width * maxWidth) / height;
+                            height = maxWidth;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // 绘制并压缩
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                    resolve(compressedDataUrl);
+                };
+                
+                img.src = dataUrl;
+            });
+        }
+        
+        // 获取图片尺寸
+        function getImageDimensions(dataUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = function() {
+                    resolve(`${img.width}x${img.height}`);
+                };
+                img.src = dataUrl;
+            });
+        }
+        
+        // 生成测试图片
+        function createTestImage(width = 300, height = 200, color = 'blue', text = '测试图片') {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // 绘制背景
+                ctx.fillStyle = color;
+                ctx.fillRect(0, 0, width, height);
+                
+                // 添加文字
+                ctx.fillStyle = 'white';
+                ctx.font = '24px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, width / 2, height / 2);
+                
+                // 添加时间戳
+                ctx.font = '12px Arial';
+                ctx.fillText(new Date().toLocaleTimeString(), width / 2, height / 2 + 40);
+                
+                const dataUrl = canvas.toDataURL('image/png');
+                resolve(dataUrl);
+            });
+        }
+        
+        // 发送测试图片
+        async function sendTestImages() {
+            showStatus('生成测试图片...', 'info');
+            
+            try {
+                // 清空现有图片
+                clearImages();
+                
+                // 生成3张不同的测试图片
+                const colors = ['red', 'green', 'blue'];
+                const texts = ['测试图片1', '测试图片2', '测试图片3'];
+                
+                for (let i = 0; i < 3; i++) {
+                    const dataUrl = await createTestImage(
+                        300 + i * 50, 
+                        200 + i * 30, 
+                        colors[i], 
+                        texts[i]
+                    );
+                    
+                    // 创建虚拟文件对象
+                    const blob = await fetch(dataUrl).then(r => r.blob());
+                    const file = new File([blob], `test_image_${i + 1}.png`, { type: 'image/png' });
+                    
+                    const imageData = {
+                        file: file,
+                        data: dataUrl,
+                        name: file.name,
+                        size: `${(file.size / 1024).toFixed(1)}KB`
+                    };
+                    
+                    selectedImages.push(imageData);
+                }
+                
+                updateImagePreview();
+                
+                // 填充测试消息
+                fillMessage(
+                    '这是包含3张测试图片的消息，用于测试图片发送功能', 
+                    '图片测试程序', 
+                    'text', 
+                    'normal'
+                );
+                
+                showStatus('测试图片已生成，点击发送按钮发送消息', 'success');
+                
+            } catch (error) {
+                showStatus(`生成测试图片失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 修改清空表单函数，同时清空图片
+        function clearForm() {
+            document.getElementById('message-text').value = '';
+            document.getElementById('sender').value = '测试发送器';
+            document.getElementById('message-type').value = 'text';
+            document.getElementById('priority').value = 'normal';
+            clearImages();
+            showStatus('表单已清空', 'success');
+        }
+        
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + Enter 发送消息
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('message-form').requestSubmit();
+            }
+            
+            // Escape 清空表单
+            if (e.key === 'Escape') {
+                clearForm();
+            }
+        });
+    </script>
+</body>
+</html>

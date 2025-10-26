@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini 2.5 Flash-Lite 多模态聊天</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <div class="main-layout">
+        <!-- 左侧主要内容 -->
+        <div class="main-content">
+            <header class="header">
+                <h1><i class="material-icons">chat</i> Gemini 多模态聊天助手</h1>
+                <p>支持语音、图片、文字输入，实时语音和文字输出</p>
+            </header>
+
+        <!-- 连接状态 -->
+        <div class="status-bar">
+            <div class="status-item">
+                <i class="material-icons" id="connection-icon">cloud_off</i>
+                <span id="connection-status">未连接</span>
+            </div>
+            <div class="status-item model-selector">
+                <i class="material-icons">model_training</i>
+                <select id="model-select" onchange="changeModel()">
+                    <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+                    <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                    <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                    <option value="gemini-live-2.5-flash-preview">gemini-live-2.5-flash-preview</option>
+                    <option value="gemini-2.5-flash-preview-native-audio-dialog">gemini-2.5-flash-preview-native-audio-dialog</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 配置面板 -->
+        <div class="config-panel">
+            <h3><i class="material-icons">settings</i> 转发配置</h3>
+            <div class="config-content">
+                <div class="config-row">
+                    <label for="forward-url">外部程序URL:</label>
+                    <input type="text" id="forward-url" placeholder="http://localhost:3000/api/receive" />
+                    <button onclick="setForwardUrl()" class="config-btn">设置</button>
+                    <button onclick="openMonitorWindow()" class="monitor-btn">监听窗口</button>
+                </div>
+                <div id="forward-status" class="config-status"></div>
+                
+                <!-- ROS2指令转发 -->
+                <div class="config-row">
+                    <label for="ros-command">ROS2指令内容:</label>
+                    <textarea id="ros-command" placeholder="输入要发送给无人机的指令内容..." rows="3"></textarea>
+                    <button onclick="sendToROS()" class="ros-btn">发送到ROS2</button>
+                    <button onclick="fillFromLastMessage()" class="fill-btn">填入最后回复</button>
+                </div>
+                <div id="ros-status" class="config-status"></div>
+            </div>
+        </div>
+
+        <!-- 聊天界面 -->
+        <div class="chat-container">
+            <div class="chat-messages" id="chat-messages">
+                <div class="welcome-message">
+                    <i class="material-icons">waving_hand</i>
+                    <p>欢迎使用 Gemini 多模态聊天助手！</p>
+                    <p>您可以通过文字、语音或图片与我互动。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="input-container">
+            <!-- 文字输入 -->
+            <div class="text-input-area">
+                <input type="text" id="text-input" placeholder="输入消息..." />
+                <button onclick="sendTextMessage()" id="send-btn">
+                    <i class="material-icons">send</i>
+                </button>
+            </div>
+
+            <!-- 多媒体控制 -->
+            <div class="media-controls">
+                <!-- 语音录制 -->
+                <div class="voice-control">
+                    <button id="voice-btn" onclick="toggleVoiceRecording()">
+                        <i class="material-icons">mic</i>
+                    </button>
+                    <span class="control-label">语音</span>
+                </div>
+
+                <!-- 图片上传 -->
+                <div class="image-control">
+                    <button onclick="document.getElementById('image-upload').click()">
+                        <i class="material-icons">photo_camera</i>
+                    </button>
+                    <span class="control-label">图片</span>
+                    <input type="file" id="image-upload" accept="image/*" multiple style="display: none;" onchange="handleImageUpload(event)" />
+                </div>
+
+                <!-- 清除历史 -->
+                <div class="clear-control">
+                    <button onclick="clearHistory()">
+                        <i class="material-icons">clear_all</i>
+                    </button>
+                    <span class="control-label">清除</span>
+                </div>
+            </div>
+
+            <!-- 图片预览 -->
+            <div id="image-preview" class="image-preview"></div>
+
+            <!-- 录音状态 -->
+            <div id="recording-status" class="recording-status" style="display: none;">
+                <div class="recording-indicator">
+                    <i class="material-icons">mic</i>
+                    <span>正在录音...</span>
+                    <div class="recording-animation"></div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <!-- 右侧消息面板 -->
+        <div class="side-panel">
+            <div class="panel-header">
+                <h3><i class="material-icons">inbox</i> 外部消息</h3>
+                            <div class="panel-controls">
+                <button onclick="openMessageSender()" class="send-test-btn" title="测试发送">
+                    <i class="material-icons">send</i>
+                </button>
+                <button onclick="refreshIncomingMessages()" class="refresh-btn" title="刷新">
+                    <i class="material-icons">refresh</i>
+                </button>
+                <button onclick="markAllRead()" class="mark-read-btn" title="全部已读">
+                    <i class="material-icons">done_all</i>
+                </button>
+                <button onclick="clearIncomingMessages()" class="clear-btn" title="清空">
+                    <i class="material-icons">clear</i>
+                </button>
+            </div>
+            </div>
+            
+            <div class="panel-stats">
+                <span id="message-count">0 条消息</span>
+                <span id="unread-count" class="unread-badge">0 未读</span>
+            </div>
+            
+            <div class="incoming-messages" id="incoming-messages">
+                <div class="no-messages">
+                    <i class="material-icons">inbox</i>
+                    <p>暂无外部消息</p>
+                    <small>其他程序可以通过 3001 端口发送消息</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 音频播放器 -->
+    <audio id="audio-player" style="display: none;"></audio>
+
+    <!-- 加载提示 -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <i class="material-icons">hourglass_empty</i>
+            <p>正在处理...</p>
+        </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
