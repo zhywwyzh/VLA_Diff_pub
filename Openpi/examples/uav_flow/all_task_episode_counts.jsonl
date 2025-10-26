@@ -1,0 +1,757 @@
+{"task": "Navigate to the tree from the right side", "episode_count": 1296}
+{"task": "Progress toward the tree on the left side", "episode_count": 1159}
+{"task": "Need to make way past the tree from the right side", "episode_count": 967}
+{"task": "Request to spin in counterclockwise direction", "episode_count": 726}
+{"task": "Request to advance past the tree from the left side", "episode_count": 717}
+{"task": "Shift toward the right side", "episode_count": 627}
+{"task": "Suggest progressing to the tree on the left side", "episode_count": 596}
+{"task": "Back off from the tree ahead", "episode_count": 577}
+{"task": "Suggest proceeding to the tree on the right side", "episode_count": 546}
+{"task": "Make way through the middle tree from the right side", "episode_count": 513}
+{"task": "Request to shift to face the left", "episode_count": 491}
+{"task": "Need to get closer to the streetlight on the right side", "episode_count": 460}
+{"task": "Request to travel past the middle tree from the left side", "episode_count": 456}
+{"task": "Need to head toward the front of the streetlight", "episode_count": 449}
+{"task": "Proceed past the streetlight from the right side", "episode_count": 427}
+{"task": "Advance toward the streetlight from the left side", "episode_count": 426}
+{"task": "Go to the tree on the right side", "episode_count": 419}
+{"task": "Go past the tree from the right side", "episode_count": 391}
+{"task": "Go through the tree from the right side", "episode_count": 384}
+{"task": "Proceed to the tree on the left side", "episode_count": 376}
+{"task": "Retreat from the street light on the front side", "episode_count": 370}
+{"task": "Suggest progressing to the middle tree on the right side", "episode_count": 364}
+{"task": "Go past the tree from the left side", "episode_count": 364}
+{"task": "Make for the middle tree from the left side", "episode_count": 360}
+{"task": "Progress to the tree on the right side", "episode_count": 359}
+{"task": "Please proceed toward the front of the tree", "episode_count": 333}
+{"task": "Go to the tree on the left side", "episode_count": 324}
+{"task": "Navigate through the streetlight from the left side", "episode_count": 302}
+{"task": "Please turn clockwise for a full circle", "episode_count": 301}
+{"task": "Suggest progressing through the tree from the left side", "episode_count": 292}
+{"task": "Please proceed toward the tree on the right side", "episode_count": 290}
+{"task": "Move about the tree in counterclockwise direction", "episode_count": 276}
+{"task": "Please advance toward the bicycle from the right side", "episode_count": 266}
+{"task": "Please make way through the bicycle from the right side", "episode_count": 234}
+{"task": "Proceed through the bicycle from the left side", "episode_count": 225}
+{"task": "Move to the bicycle on the left side", "episode_count": 205}
+{"task": "Go to the streetlight on the right side", "episode_count": 197}
+{"task": "Go past the streetlight from the left side", "episode_count": 197}
+{"task": "Spin to the right", "episode_count": 197}
+{"task": "Pass by the streetlight from the right side", "episode_count": 194}
+{"task": "Spin to the left side", "episode_count": 176}
+{"task": "Head toward the left side of the tree on the left side", "episode_count": 174}
+{"task": "Move away from the tree on the front side", "episode_count": 166}
+{"task": "Go to the streetlight on the left side", "episode_count": 146}
+{"task": "Translate toward the right side of the tree", "episode_count": 145}
+{"task": "Progress toward the tree on the front side", "episode_count": 143}
+{"task": "Pass around the tree from the right side", "episode_count": 128}
+{"task": "Go to the lamp post on the right side", "episode_count": 125}
+{"task": "Suggest hovering on the right side of the tree", "episode_count": 116}
+{"task": "Hover on the left side of the tree", "episode_count": 114}
+{"task": "Go to the lamp post on the left side", "episode_count": 112}
+{"task": "Request to travel past the streetlight from the left side", "episode_count": 107}
+{"task": "Proceed toward the tree ahead", "episode_count": 106}
+{"task": "Rotate counterclockwise once behind the tree", "episode_count": 103}
+{"task": "Translate toward the left side of the tree", "episode_count": 100}
+{"task": "Pass by the lamp post from the left side", "episode_count": 98}
+{"task": "Request to advance past the streetlight from the right side", "episode_count": 97}
+{"task": "Go past the lamp post from the right side", "episode_count": 93}
+{"task": "Advance to the tree from the front side", "episode_count": 92}
+{"task": "Progress to the middle tree in front", "episode_count": 92}
+{"task": "Revolve about the tree in clockwise direction", "episode_count": 88}
+{"task": "Please make way through the left tree from the left side", "episode_count": 86}
+{"task": "Pass through the first tree from the right side, then pass through the second tree from the left side", "episode_count": 86}
+{"task": "Move toward the tree on the side", "episode_count": 81}
+{"task": "Pass by the tree from the right side", "episode_count": 81}
+{"task": "Navigate past the tree from the left side", "episode_count": 80}
+{"task": "Suggest progressing to the light on the side", "episode_count": 79}
+{"task": "Request to move through the right side tree from the right side", "episode_count": 78}
+{"task": "Make way past the tree from the left side", "episode_count": 77}
+{"task": "Please make way to the big tree from the front side", "episode_count": 67}
+{"task": "Move away from the tree on the side", "episode_count": 67}
+{"task": "Please go to the tree on the left side", "episode_count": 66}
+{"task": "Suggest circling about the streetlight in counterclockwise direction", "episode_count": 66}
+{"task": "Request to move through the light from the left side", "episode_count": 61}
+{"task": "Please pass through the first tree from the left side, then pass through the second tree from the right side", "episode_count": 61}
+{"task": "Go to the front of the tree", "episode_count": 59}
+{"task": "Suggest moving closer to the tree on the right side", "episode_count": 58}
+{"task": "Go toward the building from the right side", "episode_count": 58}
+{"task": "Advance toward the bicycle from the front side", "episode_count": 58}
+{"task": "Suggest proceeding past the light from the right side", "episode_count": 58}
+{"task": "Suggest progressing through the warning sign from the right side", "episode_count": 57}
+{"task": "Advance through the middle streetlight from the right side", "episode_count": 56}
+{"task": "Retreat from the tree ahead", "episode_count": 56}
+{"task": "Proceed through the signboard from the left side", "episode_count": 55}
+{"task": "Back up from the bicycle on the front side", "episode_count": 55}
+{"task": "Navigate to the building from the left side", "episode_count": 53}
+{"task": "Move to the light on the right side", "episode_count": 53}
+{"task": "Need to advance through the small street lamp from the right side", "episode_count": 53}
+{"task": "Make way to the light from the left side", "episode_count": 52}
+{"task": "Orbit the tree in counterclockwise direction", "episode_count": 50}
+{"task": "Go to the camera on the front side", "episode_count": 49}
+{"task": "Cross through the sign from the right side", "episode_count": 49}
+{"task": "Proceed past the warning sign from the left side", "episode_count": 48}
+{"task": "Proceed past the small streetlight from the left side", "episode_count": 48}
+{"task": "Navigate around the bicycle in counterclockwise direction", "episode_count": 48}
+{"task": "Advance through the first tree from the left side, then approach the second tree from the left side", "episode_count": 46}
+{"task": "Move closer to the large tree ahead", "episode_count": 44}
+{"task": "Go toward the middle streetlight from the right side", "episode_count": 44}
+{"task": "Please progress toward the camera on the left side", "episode_count": 44}
+{"task": "Please travel about the big tree in counterclockwise direction", "episode_count": 44}
+{"task": "Request to rotate clockwise once behind the tree", "episode_count": 43}
+{"task": "Need to navigate past the first tree from the right side, then approach the second tree from the right side", "episode_count": 42}
+{"task": "Proceed past the middle streetlight from the left side", "episode_count": 42}
+{"task": "Go to the front of the streetlight", "episode_count": 41}
+{"task": "Please advance toward the front for surveillance", "episode_count": 41}
+{"task": "Move past the road sign from the right side", "episode_count": 41}
+{"task": "Approach the middle streetlight from the left side", "episode_count": 40}
+{"task": "Request to move through the camera from the right side", "episode_count": 40}
+{"task": "Request to advance past the fire hydrant from the right side", "episode_count": 40}
+{"task": "Need to back off from the tree", "episode_count": 40}
+{"task": "Please move off from the light", "episode_count": 40}
+{"task": "Step away from the tree on the front side", "episode_count": 40}
+{"task": "Need to spin to face the front of the tree", "episode_count": 40}
+{"task": "Approach the streetlight from the right side", "episode_count": 39}
+{"task": "Proceed toward the road sign on the right side", "episode_count": 39}
+{"task": "Progress through the fire hydrant from the left side", "episode_count": 39}
+{"task": "Please cross past the camera from the left side", "episode_count": 39}
+{"task": "Turn to the front of the light", "episode_count": 38}
+{"task": "Suggest moving away from the tree on the front side", "episode_count": 37}
+{"task": "Suggest moving closer to the camera on the right side", "episode_count": 36}
+{"task": "Travel past the camera from the right side", "episode_count": 36}
+{"task": "Pass by the camera from the left side", "episode_count": 36}
+{"task": "Translate toward the right side of the light", "episode_count": 36}
+{"task": "Orbit the streetlight in counterclockwise direction", "episode_count": 36}
+{"task": "Proceed to the camera on the right side", "episode_count": 35}
+{"task": "Turn around the big tree in clockwise direction", "episode_count": 35}
+{"task": "Go toward the road sign from the left side", "episode_count": 34}
+{"task": "Need to advance to the camera from the left side", "episode_count": 34}
+{"task": "Request to translate toward the right side of the tree", "episode_count": 34}
+{"task": "Go past the first tree from the right side, then approach the second tree from the left side", "episode_count": 33}
+{"task": "Suggest progressing through the road sign from the left side", "episode_count": 33}
+{"task": "Land at the streetlight position", "episode_count": 32}
+{"task": "Travel through the streetlight flag from the right side", "episode_count": 31}
+{"task": "Go past the first tree from the left side, then approach the second tree from the right side", "episode_count": 31}
+{"task": "Please circle the tree in clockwise direction", "episode_count": 31}
+{"task": "Orbit the tree", "episode_count": 29}
+{"task": "Revolve about the tree in counterclockwise direction", "episode_count": 29}
+{"task": "Move through the tree from the right side", "episode_count": 28}
+{"task": "Cross past the streetlight flag from the left side", "episode_count": 28}
+{"task": "Retreat from the streetlight ahead", "episode_count": 28}
+{"task": "Translate to the left", "episode_count": 28}
+{"task": "Move to the right", "episode_count": 27}
+{"task": "Proceed toward the streetlight ahead", "episode_count": 27}
+{"task": "Please hover at the left side of the streetlight", "episode_count": 27}
+{"task": "Navigate to the left side of the streetlight from the left side", "episode_count": 27}
+{"task": "Move in the left direction of the tree", "episode_count": 27}
+{"task": "Hover beside the streetlight on the right side", "episode_count": 27}
+{"task": "Cross past the surveillance from the right side", "episode_count": 27}
+{"task": "Head toward the small streetlight on the right side", "episode_count": 26}
+{"task": "Please progress toward the monitoring area on the right side", "episode_count": 26}
+{"task": "Head to the monitor on the left side", "episode_count": 26}
+{"task": "Fly around the streetlight in clockwise direction", "episode_count": 26}
+{"task": "Land on the left side of the bicycle", "episode_count": 25}
+{"task": "Request to move to the warning sign on the right side", "episode_count": 25}
+{"task": "Advance through the monitoring from the left side", "episode_count": 25}
+{"task": "Please move to the right side of the camera", "episode_count": 24}
+{"task": "Back off from the camera on the front side", "episode_count": 24}
+{"task": "Back away from the camera", "episode_count": 24}
+{"task": "Turn to face the camera", "episode_count": 24}
+{"task": "Land on the right side of the bicycle", "episode_count": 23}
+{"task": "Move to the bicycle on the right side", "episode_count": 23}
+{"task": "Progress past the iron box from the right side", "episode_count": 23}
+{"task": "Need to head toward the big tree from the front side", "episode_count": 22}
+{"task": "Please turn to the counterclockwise side", "episode_count": 22}
+{"task": "Request to move through the tree from the left side", "episode_count": 21}
+{"task": "Go past the bicycle from the left side", "episode_count": 20}
+{"task": "Request to rotate toward the clockwise", "episode_count": 20}
+{"task": "Land on the right side of the lamp post", "episode_count": 19}
+{"task": "Please go to the sculpture on the front side", "episode_count": 19}
+{"task": "Go past the bicycle from the right side", "episode_count": 19}
+{"task": "Go past the sign from the right side", "episode_count": 18}
+{"task": "Suggest moving away from the surveillance ahead", "episode_count": 18}
+{"task": "Rotate toward the counterclockwise side", "episode_count": 18}
+{"task": "Rotate toward the clockwise side", "episode_count": 18}
+{"task": "Suggest navigating around the tree in circular direction", "episode_count": 18}
+{"task": "Head to the sign on the left side", "episode_count": 17}
+{"task": "Move through the sign from the left side", "episode_count": 17}
+{"task": "Back off from the lamp post ahead", "episode_count": 17}
+{"task": "Move to the tree on the left side", "episode_count": 16}
+{"task": "Need to head toward the statue on the right side", "episode_count": 16}
+{"task": "Orbit about the camera in counterclockwise direction", "episode_count": 16}
+{"task": "Land to the left side of the tree", "episode_count": 15}
+{"task": "Land to the right side of the tree", "episode_count": 15}
+{"task": "Land at the lamp post on the right side", "episode_count": 15}
+{"task": "Land to the front side of the camera", "episode_count": 15}
+{"task": "Request to move toward the warning sign on the left side", "episode_count": 15}
+{"task": "Move toward the statue on the left side", "episode_count": 15}
+{"task": "Go to the signboard on the right side", "episode_count": 15}
+{"task": "Please pass through the tree from the right side, then pass through the tree from the left side", "episode_count": 15}
+{"task": "Advance past the iron box from the left side", "episode_count": 15}
+{"task": "Approach the tree from the right side", "episode_count": 14}
+{"task": "Move to the sign on the right side", "episode_count": 14}
+{"task": "Request to move toward the tree on the right side", "episode_count": 14}
+{"task": "Move toward the road sign on the front side", "episode_count": 14}
+{"task": "Advance through the first tree from the right side, then advance through the second tree from the right side", "episode_count": 14}
+{"task": "Suggest proceeding past the umbrella from the left side", "episode_count": 14}
+{"task": "Please cross past the umbrella from the right side", "episode_count": 14}
+{"task": "Rotate to the clockwise side of the tree", "episode_count": 14}
+{"task": "Approach the fire hydrant from the right side", "episode_count": 13}
+{"task": "Head to the gas marker on the right side", "episode_count": 13}
+{"task": "Request to move to the streetlight flag on the right side", "episode_count": 13}
+{"task": "Head to the trash can on the right side", "episode_count": 13}
+{"task": "Please proceed toward the signboard on the left side", "episode_count": 13}
+{"task": "Rotate toward the counterclockwise side of the tree", "episode_count": 13}
+{"task": "Need to get closer to the tree on the side", "episode_count": 12}
+{"task": "Request to hover at the top point of the front tree", "episode_count": 12}
+{"task": "Land on the right side of the tree", "episode_count": 12}
+{"task": "Land on the front side of the streetlight", "episode_count": 12}
+{"task": "Request to move to the sculpture on the right side", "episode_count": 12}
+{"task": "Go to the gas marker on the left side", "episode_count": 12}
+{"task": "Travel to the small streetlight from the left side", "episode_count": 12}
+{"task": "Need to head toward the sculpture on the left side", "episode_count": 12}
+{"task": "Pass by the gas sign from the right side", "episode_count": 12}
+{"task": "Move past the first tree from the left side, then move past the second tree from the left side", "episode_count": 12}
+{"task": "Go past the trash can from the right side", "episode_count": 12}
+{"task": "Pass by the gas sign from the left side", "episode_count": 12}
+{"task": "Retreat from the tree", "episode_count": 12}
+{"task": "Approach the streetlight ahead from the front side", "episode_count": 11}
+{"task": "Navigate to the fire hydrant from the left side", "episode_count": 11}
+{"task": "Proceed through the cone from the right side", "episode_count": 11}
+{"task": "Pass through the first tree from the left side, then go past the second tree from the right side, and finally advance past the third tree from the left side", "episode_count": 11}
+{"task": "Go past the trash can from the left side", "episode_count": 11}
+{"task": "Travel past the tree from the left side, then travel past the tree from the right side", "episode_count": 11}
+{"task": "Land to the front side of the tree", "episode_count": 10}
+{"task": "Please land at the tree on the right side", "episode_count": 10}
+{"task": "Land at the tree location", "episode_count": 10}
+{"task": "Land at the monitoring position", "episode_count": 10}
+{"task": "Land toward the front side of the tree", "episode_count": 10}
+{"task": "Hover on the right side of the camera", "episode_count": 10}
+{"task": "Please cross past the school motto from the top side", "episode_count": 10}
+{"task": "Proceed through the first tree from the right side, then through the second tree from the left side", "episode_count": 10}
+{"task": "Retreat from the streetlight on the front side", "episode_count": 10}
+{"task": "Go back from the sculpture on the front side", "episode_count": 10}
+{"task": "Orbit the light in counterclockwise direction", "episode_count": 10}
+{"task": "Orbit the light in clockwise direction", "episode_count": 10}
+{"task": "Progress to the trash bin on the left side", "episode_count": 9}
+{"task": "Progress to the streetlight flag on the left side", "episode_count": 9}
+{"task": "Proceed through the road sign from the right side", "episode_count": 9}
+{"task": "Need to withdraw from the building on the front side", "episode_count": 9}
+{"task": "Advance toward the left-front tree from the left side", "episode_count": 8}
+{"task": "Head to the pillar on the left side", "episode_count": 8}
+{"task": "Go to the landmark on the left side", "episode_count": 8}
+{"task": "Head to the building on the side", "episode_count": 8}
+{"task": "Move toward the left side of the streetlight", "episode_count": 8}
+{"task": "Request to move toward the streetlight from the front side", "episode_count": 8}
+{"task": "Make way to the streetlight from the front side", "episode_count": 8}
+{"task": "Cross past the statue from the left side", "episode_count": 8}
+{"task": "Suggest proceeding past the goal from the right side", "episode_count": 8}
+{"task": "Cross past the statue from the right side", "episode_count": 8}
+{"task": "Please cross past the cone from the left side", "episode_count": 8}
+{"task": "Go through the road sign from the left side", "episode_count": 8}
+{"task": "Suggest moving away from the streetlight on the xx side", "episode_count": 8}
+{"task": "Request to translate toward the right side of the streetlight", "episode_count": 8}
+{"task": "Orbit the lamp post", "episode_count": 8}
+{"task": "Land toward the front side of the light", "episode_count": 7}
+{"task": "Head to the lamp post on the front side", "episode_count": 7}
+{"task": "Proceed toward the building on the front side", "episode_count": 7}
+{"task": "Hover at the left side of the camera", "episode_count": 7}
+{"task": "Advance to the landmark from the right side", "episode_count": 7}
+{"task": "Move to the pillar on the right side", "episode_count": 7}
+{"task": "Proceed toward the wing room on the right side", "episode_count": 7}
+{"task": "Suggest proceeding past the sculpture from the right side", "episode_count": 7}
+{"task": "Go past the pillar from the left side", "episode_count": 7}
+{"task": "Move past the sculpture from the left side", "episode_count": 7}
+{"task": "Pass through the first tree from the right side, then pass through the second tree from the left side, and finally pass through the third tree from the left side", "episode_count": 7}
+{"task": "Shift toward the left side of the building", "episode_count": 7}
+{"task": "Orbit the sign in counterclockwise direction", "episode_count": 7}
+{"task": "Rotate around the camera in clockwise direction", "episode_count": 7}
+{"task": "Move closer to the tree on the right side from the front left", "episode_count": 6}
+{"task": "Suggest hovering on the top side of the streetlight", "episode_count": 6}
+{"task": "Navigate toward the soccer goal from the left side", "episode_count": 6}
+{"task": "Make for the goal from the left side", "episode_count": 6}
+{"task": "Please proceed toward the front middle streetlight", "episode_count": 6}
+{"task": "Head to the building on the right side", "episode_count": 6}
+{"task": "Suggest progressing through the road pole from the right side", "episode_count": 6}
+{"task": "Need to make way past the stone from the right side", "episode_count": 6}
+{"task": "Go through the pillar from the right side", "episode_count": 6}
+{"task": "Need to navigate past the speed limit sign from the right side", "episode_count": 6}
+{"task": "Navigate through the building from the right side", "episode_count": 6}
+{"task": "Please go back from the road sign ahead", "episode_count": 6}
+{"task": "Need to back off from the road sign ahead", "episode_count": 6}
+{"task": "Request to spin counterclockwise around the left rear side of the tree once", "episode_count": 6}
+{"task": "Shift in the direction of the building's right side", "episode_count": 6}
+{"task": "Orbit the tree in clockwise direction", "episode_count": 6}
+{"task": "Move closer to the goal on the right side", "episode_count": 5}
+{"task": "Suggest moving closer to the signboard on the right side", "episode_count": 5}
+{"task": "Move closer to the signboard on the left side", "episode_count": 5}
+{"task": "Please approach the building from the left side", "episode_count": 5}
+{"task": "Land to the left side of the street light", "episode_count": 5}
+{"task": "Suggest navigating toward the tree ahead on the right from the left side", "episode_count": 5}
+{"task": "Navigate toward the front tree from the left side", "episode_count": 5}
+{"task": "Suggest progressing to the wing room on the left side", "episode_count": 5}
+{"task": "Navigate to the road pole from the right side", "episode_count": 5}
+{"task": "Go toward the umbrella from the left side", "episode_count": 5}
+{"task": "Head to the tree on the front side", "episode_count": 5}
+{"task": "Proceed toward the front of the bicycle", "episode_count": 5}
+{"task": "Please progress toward the stone on the right side", "episode_count": 5}
+{"task": "Please proceed toward the cone on the right side", "episode_count": 5}
+{"task": "Travel to the fire hydrant from the left side", "episode_count": 5}
+{"task": "Suggest proceeding past the school motto from the right side", "episode_count": 5}
+{"task": "Progress past the sculpture from the left side", "episode_count": 5}
+{"task": "Need to make way past the tree ahead from the left side, then proceed over the obstacle from above", "episode_count": 5}
+{"task": "Request to move through the tree from the left side, then proceed through the streetlights from the right side", "episode_count": 5}
+{"task": "Make way past the sculpture from the right side", "episode_count": 5}
+{"task": "Need to make way past the first tree from the left side, and the second tree from the right side", "episode_count": 5}
+{"task": "Cross past the school motto from the left side", "episode_count": 5}
+{"task": "Request to move through the signboard from the right side", "episode_count": 5}
+{"task": "Pass by the soccer goal from the left side", "episode_count": 5}
+{"task": "Pass by the first tree from the left side, then cross past the second tree from the right side, and finally go past the third tree from the right side", "episode_count": 5}
+{"task": "Translate to the left side of the tree", "episode_count": 5}
+{"task": "Orbit about the warning sign in counterclockwise direction", "episode_count": 5}
+{"task": "Revolve about the streetlight in xx direction", "episode_count": 5}
+{"task": "Get closer to the monitoring on the left side", "episode_count": 4}
+{"task": "Land on the left side of the streetlight", "episode_count": 4}
+{"task": "Land to the right side of the camera", "episode_count": 4}
+{"task": "Please go to the substation box on the right side", "episode_count": 4}
+{"task": "Make for the iron box from the left side", "episode_count": 4}
+{"task": "Go toward the landmark from the left side", "episode_count": 4}
+{"task": "Head to the monitor on the right side", "episode_count": 4}
+{"task": "Progress toward the iron box on the right side", "episode_count": 4}
+{"task": "Proceed to the building on the front side", "episode_count": 4}
+{"task": "Move to the right side of the tree", "episode_count": 4}
+{"task": "Head toward the landmark on the right side", "episode_count": 4}
+{"task": "Go to the iron box on the right side", "episode_count": 4}
+{"task": "Move to the trash can on the front side", "episode_count": 4}
+{"task": "Advance to the display pillar from the right side", "episode_count": 4}
+{"task": "Go past the middle tree from the left side, then go past the left tree from the right side", "episode_count": 4}
+{"task": "Navigate past the left streetlight from the left side", "episode_count": 4}
+{"task": "Go past the building from the left side", "episode_count": 4}
+{"task": "Pass by the surveillance from the right side", "episode_count": 4}
+{"task": "Request to travel past the right streetlight from the right side", "episode_count": 4}
+{"task": "Cross past the iron box from the left side", "episode_count": 4}
+{"task": "Advance past the speed limit sign from the left side", "episode_count": 4}
+{"task": "Move past the substation from the left side", "episode_count": 4}
+{"task": "Move through the iron box from the right side", "episode_count": 4}
+{"task": "Travel past the display pillar from the left side", "episode_count": 4}
+{"task": "Proceed past the middle tree from the right side, then pass the front tree from the left side", "episode_count": 4}
+{"task": "Cross through the surveillance from the left side", "episode_count": 4}
+{"task": "Move away from the building", "episode_count": 4}
+{"task": "Spin in counterclockwise direction", "episode_count": 4}
+{"task": "Spin in clockwise direction", "episode_count": 4}
+{"task": "Move about the bicycle in counterclockwise direction", "episode_count": 4}
+{"task": "Rotate around the road sign in counterclockwise direction", "episode_count": 4}
+{"task": "Suggest navigating around the small streetlight in counterclockwise direction", "episode_count": 4}
+{"task": "Rotate to face the front of the building", "episode_count": 4}
+{"task": "Get closer to the small lamp post on the left side", "episode_count": 3}
+{"task": "Move closer to the sign on the front side", "episode_count": 3}
+{"task": "Move closer to the road sign in the front middle", "episode_count": 3}
+{"task": "Need to get closer to the warning sign on the side", "episode_count": 3}
+{"task": "Hover above the tree ahead", "episode_count": 3}
+{"task": "Land on the front side of the tree", "episode_count": 3}
+{"task": "Land on the left side of the lamp pole", "episode_count": 3}
+{"task": "Need to land toward the right side of the warning sign", "episode_count": 3}
+{"task": "Suggest landing on the right side of the big tree", "episode_count": 3}
+{"task": "Request to move toward the tree on the right side in front", "episode_count": 3}
+{"task": "Need to head toward the school motto on the left side", "episode_count": 3}
+{"task": "Suggest navigating toward the tree from above", "episode_count": 3}
+{"task": "Need to make for the tree from the front side", "episode_count": 3}
+{"task": "Move to the substation box on the left side", "episode_count": 3}
+{"task": "Move in the direction of the right side of the sign", "episode_count": 3}
+{"task": "Navigate toward the tree from the left side", "episode_count": 3}
+{"task": "Please make way to the iron box from the left side", "episode_count": 3}
+{"task": "Progress toward the signboard on the right side", "episode_count": 3}
+{"task": "Please progress toward the front of the road sign", "episode_count": 3}
+{"task": "Head toward the soccer goal on the right side", "episode_count": 3}
+{"task": "Request to head to the cone on the left side", "episode_count": 3}
+{"task": "Please go to the middle tree ahead on the right side", "episode_count": 3}
+{"task": "Go toward the gas sign from the front side", "episode_count": 3}
+{"task": "Request to move to the left side of the light", "episode_count": 3}
+{"task": "Please progress toward the camera on the front side", "episode_count": 3}
+{"task": "Progress to the fire hydrant on the right side", "episode_count": 3}
+{"task": "Please navigate through the tree from the right side, then through the streetlights from the left side", "episode_count": 3}
+{"task": "Pass through the middle tree from the right side, then navigate past the front streetlight from the left side", "episode_count": 3}
+{"task": "Request to travel past the small lamp post from the right side", "episode_count": 3}
+{"task": "Pass through the fire hydrant from the left side", "episode_count": 3}
+{"task": "Cross past the transformer box from the right side", "episode_count": 3}
+{"task": "Pass by the middle tree from the left side, then pass by the middle tree from the right side", "episode_count": 3}
+{"task": "Please cross past the signboard from the right side", "episode_count": 3}
+{"task": "Please cross past the first tree from the right side, then cross past the second tree from the left side", "episode_count": 3}
+{"task": "Please make way through the middle tree from the right side, then through the left tree from the left side", "episode_count": 3}
+{"task": "Make for the second tree from the right side after bypassing the first tree from the left", "episode_count": 3}
+{"task": "Navigate through the tree from the right side, then proceed past the sign from the left side", "episode_count": 3}
+{"task": "Progress through the goal from the left side", "episode_count": 3}
+{"task": "Pass by the fire hydrant from the right side", "episode_count": 3}
+{"task": "Pass through the display pole from the right side", "episode_count": 3}
+{"task": "Cross through the soccer goal from the right side", "episode_count": 3}
+{"task": "Request to withdraw from the warning sign", "episode_count": 3}
+{"task": "Back away from the bicycle ahead", "episode_count": 3}
+{"task": "Suggest retreating from the warning sign ahead", "episode_count": 3}
+{"task": "Retreat from the gas sign ahead", "episode_count": 3}
+{"task": "Spin toward the clockwise direction", "episode_count": 3}
+{"task": "Translate toward the right side of the building", "episode_count": 3}
+{"task": "Request to translate toward the left side of the sign", "episode_count": 3}
+{"task": "Orbit the trash can in counterclockwise direction", "episode_count": 3}
+{"task": "Circle around the gas marker", "episode_count": 3}
+{"task": "Fly around the bicycle in clockwise direction", "episode_count": 3}
+{"task": "Request to rotate around the sculpture in counterclockwise direction", "episode_count": 3}
+{"task": "Fly around the road sign in xx direction", "episode_count": 3}
+{"task": "Approach the streetlight flag from the front side", "episode_count": 2}
+{"task": "Suggest moving closer to the fire hydrant", "episode_count": 2}
+{"task": "Shift upward", "episode_count": 2}
+{"task": "Dive down from the current position", "episode_count": 2}
+{"task": "Hover at the top location of the front tree", "episode_count": 2}
+{"task": "Land toward the front side of the lamp pole", "episode_count": 2}
+{"task": "Land toward the right side of the sign", "episode_count": 2}
+{"task": "Land on the left side of the sign", "episode_count": 2}
+{"task": "Land toward the left side of the tree", "episode_count": 2}
+{"task": "Land at the building on the right side", "episode_count": 2}
+{"task": "Land toward the front side of the building", "episode_count": 2}
+{"task": "Land toward the right side of the bicycle", "episode_count": 2}
+{"task": "Land at the sculpture", "episode_count": 2}
+{"task": "Request to land to the right side of the streetlight", "episode_count": 2}
+{"task": "Land on the left side of the big tree", "episode_count": 2}
+{"task": "Suggest proceeding to the black cloth ahead", "episode_count": 2}
+{"task": "Please progress toward the tree on the left side", "episode_count": 2}
+{"task": "Suggest going toward the display screen from the front side", "episode_count": 2}
+{"task": "Move in the right direction of the streetlight flag", "episode_count": 2}
+{"task": "Make for the small lamp post from the right side", "episode_count": 2}
+{"task": "Progress to the school motto front side", "episode_count": 2}
+{"task": "Request to navigate to the tree from the front side", "episode_count": 2}
+{"task": "Please hover at the front side of the blue box", "episode_count": 2}
+{"task": "Proceed to the small streetlight on the side", "episode_count": 2}
+{"task": "Proceed toward the roadside pole on the left side", "episode_count": 2}
+{"task": "Please move in the direction of the right side of the warning sign", "episode_count": 2}
+{"task": "Please proceed toward the first tree on the right side, then get closer to the second tree", "episode_count": 2}
+{"task": "Advance to the small streetlight from the front side", "episode_count": 2}
+{"task": "Navigate toward the signboard from the front side", "episode_count": 2}
+{"task": "Please make way to the stone from the left side", "episode_count": 2}
+{"task": "Go to the display pillar on the left side", "episode_count": 2}
+{"task": "Request to navigate to the road pole from the left side", "episode_count": 2}
+{"task": "Move to the left side of the school motto", "episode_count": 2}
+{"task": "Need to head toward the middle tree in front", "episode_count": 2}
+{"task": "Head to the tree ahead on the right side", "episode_count": 2}
+{"task": "Please make way to the speed limit sign from the right side", "episode_count": 2}
+{"task": "Please progress toward the front of the sign", "episode_count": 2}
+{"task": "Proceed to the speed limit sign on the left side", "episode_count": 2}
+{"task": "Move through the first tree from the right side, then through the second tree from the right side, and finally through the third tree from the left side", "episode_count": 2}
+{"task": "Please go past the side room from the left side", "episode_count": 2}
+{"task": "Travel past the road pole from the left side", "episode_count": 2}
+{"task": "Advance through the tree from the left side, then approach the left side of the tree", "episode_count": 2}
+{"task": "Pass by the tree from the right side, then approach the right side of the tree", "episode_count": 2}
+{"task": "Make way through the tree ahead from the right side, then pass over the obstacle from above", "episode_count": 2}
+{"task": "Pass by the first tree from the right side, then pass by the streetlight from the right side", "episode_count": 2}
+{"task": "Pass through the first tree from the right side, then pass through the second tree from the right side, and finally pass through the third tree from the left side", "episode_count": 2}
+{"task": "Please cross past the middle tree from the right side, then cross past the right tree from the left side", "episode_count": 2}
+{"task": "Cross past the flagpole from the left side", "episode_count": 2}
+{"task": "Make way through the road sign from the left side", "episode_count": 2}
+{"task": "Request to advance past the middle tree from the right side, then advance past the left tree from the right side", "episode_count": 2}
+{"task": "Proceed through the pillar from the middle side", "episode_count": 2}
+{"task": "First pass through the first tree from the right side, then pass through the second tree from the right side, and finally cross past the third tree from the left side", "episode_count": 2}
+{"task": "Pass the first tree from the right side, then proceed past the second tree from the left side, and finally travel past the third tree from the right side", "episode_count": 2}
+{"task": "Navigate past the first tree from the left side, then pass through the second tree from the right side, and finally go past the third tree from the right side", "episode_count": 2}
+{"task": "Need to advance through the tree from the right side, then advance through the tree from the right side again", "episode_count": 2}
+{"task": "Avoid the tree from the right side", "episode_count": 2}
+{"task": "Advance past the large pole from the left side", "episode_count": 2}
+{"task": "Advance through the middle tree from the right side, then advance through the middle tree from the left side", "episode_count": 2}
+{"task": "Pass through the first tree from the left side, then pass through the second tree from the right side, and finally pass through the third tree from the left side", "episode_count": 2}
+{"task": "Navigate through the middle streetlight from the right side, then go past the right tree from the left side", "episode_count": 2}
+{"task": "Make way through the signboard from the left side", "episode_count": 2}
+{"task": "Please make way through the first tree from the right side, and pass by the second tree from the above side", "episode_count": 2}
+{"task": "Move past the first tree from the right side, then travel through the second tree from the left side, and finally cross past the third tree from the right side", "episode_count": 2}
+{"task": "Navigate past the camera pole from the left side", "episode_count": 2}
+{"task": "Go past the first tree from the right side, then approach the second tree from the right side", "episode_count": 2}
+{"task": "Please navigate through the tree from the left side, then navigate through the tree from the left side again", "episode_count": 2}
+{"task": "Need to navigate past the tree from the right side, then navigate past the streetlights from the right side", "episode_count": 2}
+{"task": "Retreat from the small streetlight", "episode_count": 2}
+{"task": "Suggest stepping back from the sign ahead", "episode_count": 2}
+{"task": "Need to back off from the small streetlight ahead", "episode_count": 2}
+{"task": "Move away from the goal on the front side", "episode_count": 2}
+{"task": "Retreat from the signboard", "episode_count": 2}
+{"task": "Please withdraw from the school motto on the front side", "episode_count": 2}
+{"task": "Back away from the fire hydrant", "episode_count": 2}
+{"task": "Request to back away from the sign on the front side", "episode_count": 2}
+{"task": "Shift toward the left side of the small streetlight", "episode_count": 2}
+{"task": "Translate to the right side of the school motto", "episode_count": 2}
+{"task": "Please shift toward the left side of the warning sign", "episode_count": 2}
+{"task": "Translate toward the left side of the streetlight flag", "episode_count": 2}
+{"task": "Request to translate toward the right side of the small streetlight", "episode_count": 2}
+{"task": "Request to move about the building in circular direction", "episode_count": 2}
+{"task": "Need to revolve about the iron box in counterclockwise direction", "episode_count": 2}
+{"task": "Rotate counterclockwise around the left side of the tree", "episode_count": 2}
+{"task": "Approach the streetlight flag from the side", "episode_count": 1}
+{"task": "Approach the tree from the left side", "episode_count": 1}
+{"task": "Move closer to the monitoring area ahead", "episode_count": 1}
+{"task": "Get closer to the front camera pole", "episode_count": 1}
+{"task": "Approach the sculpture in front", "episode_count": 1}
+{"task": "Suggest moving closer to the roadside pole on the right side", "episode_count": 1}
+{"task": "Please approach the front of the middle tree ahead from the front side", "episode_count": 1}
+{"task": "Approach the lifebuoy from the front side", "episode_count": 1}
+{"task": "Suggest moving closer to the white pillar on the front side", "episode_count": 1}
+{"task": "Move closer to the fire hydrant on the front side", "episode_count": 1}
+{"task": "Need to get closer to the speed limit sign on the front side", "episode_count": 1}
+{"task": "Please approach the tree from the near side", "episode_count": 1}
+{"task": "Approach the bicycle from the front side", "episode_count": 1}
+{"task": "Please approach the substation box from the front side", "episode_count": 1}
+{"task": "Get closer to the pole", "episode_count": 1}
+{"task": "Move closer to the first tree on the left side, then move closer to the second tree on the left side", "episode_count": 1}
+{"task": "Take off and go away from the tree ahead", "episode_count": 1}
+{"task": "Shift to the upper side", "episode_count": 1}
+{"task": "Hover at the top position of the display", "episode_count": 1}
+{"task": "Hover above the lifebuoy", "episode_count": 1}
+{"task": "Please hover at the top side of the tree", "episode_count": 1}
+{"task": "Hover above the signboard", "episode_count": 1}
+{"task": "Hover above the front side of the rock", "episode_count": 1}
+{"task": "Hover at the top location of the road sign ahead", "episode_count": 1}
+{"task": "Land on the right side of the tree on the road", "episode_count": 1}
+{"task": "Land at the front side of the lamp pole", "episode_count": 1}
+{"task": "Land to the left side of the fire hydrant", "episode_count": 1}
+{"task": "Please land at the column on the right side", "episode_count": 1}
+{"task": "Request to land to the right side of the streetlight flag", "episode_count": 1}
+{"task": "Suggest landing on the right side of the sign", "episode_count": 1}
+{"task": "Land to the front side of the sculpture", "episode_count": 1}
+{"task": "Please land at the lamp post on the right side", "episode_count": 1}
+{"task": "Need to land toward the left side of the tree", "episode_count": 1}
+{"task": "Land to the right side of the gas marker", "episode_count": 1}
+{"task": "Land on the right side of the trash can", "episode_count": 1}
+{"task": "Land at the sign on the front side", "episode_count": 1}
+{"task": "Land on the left side of the building", "episode_count": 1}
+{"task": "Need to land toward the right side of the fire hydrant", "episode_count": 1}
+{"task": "Request to land to the landmark position", "episode_count": 1}
+{"task": "Land to the left side of the camera", "episode_count": 1}
+{"task": "Request to land to the right side of the iron box", "episode_count": 1}
+{"task": "Need to land toward the left side of the statue", "episode_count": 1}
+{"task": "Please land at the tree on the left side", "episode_count": 1}
+{"task": "Request to land to the left side of the tree on the road", "episode_count": 1}
+{"task": "Suggest traveling to the lamp post from the right side and land", "episode_count": 1}
+{"task": "Land to the left side of the gas marker on the road", "episode_count": 1}
+{"task": "Land on the left side of the parachute", "episode_count": 1}
+{"task": "Head to the streetlight on the left side", "episode_count": 1}
+{"task": "Suggest going toward the signboard from the upper side", "episode_count": 1}
+{"task": "Request to head to the warning sign from the front side", "episode_count": 1}
+{"task": "Go toward the front of the display pillar from the front side", "episode_count": 1}
+{"task": "Suggest progressing to the road pole in the front middle", "episode_count": 1}
+{"task": "Advance toward the tree from the right side", "episode_count": 1}
+{"task": "Move to the display on the right side", "episode_count": 1}
+{"task": "Make way to the front of the basketball hoop from the front side", "episode_count": 1}
+{"task": "Proceed to the black cloth on the right side", "episode_count": 1}
+{"task": "Make way to the tree from the left side of the right", "episode_count": 1}
+{"task": "Advance to the roadside pole ahead", "episode_count": 1}
+{"task": "Proceed toward the umbrella on the side", "episode_count": 1}
+{"task": "Head toward the road sign on the side", "episode_count": 1}
+{"task": "Head to the big tree from the front side", "episode_count": 1}
+{"task": "Progress toward the second tree from the right side", "episode_count": 1}
+{"task": "Please progress toward the front door on the front side", "episode_count": 1}
+{"task": "Request to move toward the signboard on the front side", "episode_count": 1}
+{"task": "Head to the tree on the left side", "episode_count": 1}
+{"task": "Progress to the stone in the front center", "episode_count": 1}
+{"task": "Move to the right side of the fire hydrant", "episode_count": 1}
+{"task": "Navigate toward the windmill house in front", "episode_count": 1}
+{"task": "Move to the large pole on the front side", "episode_count": 1}
+{"task": "Make way to the streetlight from the left side", "episode_count": 1}
+{"task": "Need to head toward the warning sign on the front side", "episode_count": 1}
+{"task": "Please advance toward the poster in front", "episode_count": 1}
+{"task": "Move to the front goal on the front side", "episode_count": 1}
+{"task": "Navigate to the front center tree from the left side", "episode_count": 1}
+{"task": "Proceed toward the iron box from the front side", "episode_count": 1}
+{"task": "Need to head toward the tree on the right side", "episode_count": 1}
+{"task": "Head toward the windmill on the right side", "episode_count": 1}
+{"task": "Advance to the iron box from the front side", "episode_count": 1}
+{"task": "Request to head to the iron box on the side", "episode_count": 1}
+{"task": "Request to head to the fire hydrant on the front side", "episode_count": 1}
+{"task": "Advance toward the black cloth from the left side", "episode_count": 1}
+{"task": "Please advance toward the front of the building corner", "episode_count": 1}
+{"task": "Need to head toward the tree on the right side, then head toward another tree on the right side", "episode_count": 1}
+{"task": "Head toward the corner of the stands on the right side", "episode_count": 1}
+{"task": "Suggest navigating toward the tree from the right side", "episode_count": 1}
+{"task": "Please progress toward the right side of the left streetlight", "episode_count": 1}
+{"task": "Advance to the tree from the right side", "episode_count": 1}
+{"task": "Go to the windmill on the left side", "episode_count": 1}
+{"task": "Suggest navigating toward the front 'tree from the right side", "episode_count": 1}
+{"task": "Advance toward the front wire mesh gate from the front side", "episode_count": 1}
+{"task": "Advance to the fire hydrant from the front side", "episode_count": 1}
+{"task": "Please progress toward the cone from the front side", "episode_count": 1}
+{"task": "Request to move forward", "episode_count": 1}
+{"task": "Need to make for the iron mesh gate from the right side", "episode_count": 1}
+{"task": "Please advance toward the middle tree ahead from the right side", "episode_count": 1}
+{"task": "Advance toward the small lamp post in the middle ahead", "episode_count": 1}
+{"task": "Request to move toward the tree on the left side", "episode_count": 1}
+{"task": "Suggest navigating toward the basketball hoop from the front side", "episode_count": 1}
+{"task": "Proceed toward the tree ahead on the front side", "episode_count": 1}
+{"task": "Advance toward the flagpole ahead", "episode_count": 1}
+{"task": "Hover at the front position of the tree", "episode_count": 1}
+{"task": "Proceed toward the warning sign from the front side", "episode_count": 1}
+{"task": "Please cross past the middle tree from the left side, then cross past the front tree from the left side", "episode_count": 1}
+{"task": "Cross past the middle streetlight from the right side, then cross past the front tree from the right side", "episode_count": 1}
+{"task": "Please go past the first tree from the right side, then approach the signboard from the right side", "episode_count": 1}
+{"task": "Suggest moving past the tree and streetlights from the left side", "episode_count": 1}
+{"task": "Progress through the display from the right side", "episode_count": 1}
+{"task": "Please make way through the first tree from the right side, then proceed past the second tree from the top side", "episode_count": 1}
+{"task": "Please cross past the tree from the left side and approach the person's front", "episode_count": 1}
+{"task": "Request to travel past the tree from the right side, then approach the streetlight from the left side", "episode_count": 1}
+{"task": "Move past the middle streetlight from the left side, then proceed past the left tree from the right side", "episode_count": 1}
+{"task": "Proceed through the first tree from the left side, then through the second tree from the right side, and finally through the third tree from the left side", "episode_count": 1}
+{"task": "Navigate through the middle tree from the right side, then pass by the right tree from the left side", "episode_count": 1}
+{"task": "Please pass through the left tree from the right side, then pass through the middle tree from the left side", "episode_count": 1}
+{"task": "Make way past the fitness equipment from the middle side", "episode_count": 1}
+{"task": "Pass by the first tree from the right side, then pass by the second and third tree from the left side", "episode_count": 1}
+{"task": "Go past the first tree from the right side, then navigate through the second and third tree and the streetlight from the left side", "episode_count": 1}
+{"task": "Travel past the first tree from the left side, then past the second tree from the right side, and finally past the third tree from the right side", "episode_count": 1}
+{"task": "Proceed past the first tree from the left side, then through the second and third tree from the right side", "episode_count": 1}
+{"task": "Proceed past the left tree from the right side, then approach the front tree from the left side", "episode_count": 1}
+{"task": "Proceed past the tree from the left side, then approach the left side of the road sign", "episode_count": 1}
+{"task": "Proceed to the second tree on the left side after bypassing the first tree on the right", "episode_count": 1}
+{"task": "Navigate past the first tree from the right side, then approach the second tree", "episode_count": 1}
+{"task": "Travel through the first tree from the left side", "episode_count": 1}
+{"task": "Travel past the first tree from the left side, then travel past the second tree from the left side, and finally travel past the third tree from the left side", "episode_count": 1}
+{"task": "Proceed through the first tree from the right side, then pass by the second tree from the left side, and finally move through the third tree from the right side", "episode_count": 1}
+{"task": "Please navigate through the tree ahead from the left side", "episode_count": 1}
+{"task": "Proceed past the middle tree from the left side, then go through the right tree from the right side", "episode_count": 1}
+{"task": "Suggest proceeding past the lifebuoy from the left side", "episode_count": 1}
+{"task": "Go past the signboard from the right side, then go past the tree from the right side", "episode_count": 1}
+{"task": "Suggest moving past the first tree from the left side, then approach the second tree from the right side", "episode_count": 1}
+{"task": "Request to travel past the tree from the right side and approach the person ahead", "episode_count": 1}
+{"task": "Make way through the tree from the right side", "episode_count": 1}
+{"task": "Navigate through the middle tree from the left side, then approach the right side of the front tree", "episode_count": 1}
+{"task": "Need to make way past the white pillar from the right side", "episode_count": 1}
+{"task": "Move through the left tree from the right side, then move through the right tree from the left side", "episode_count": 1}
+{"task": "First pass through the first tree from the right side, then navigate through the second tree from the left side, next travel through the third tree from the left side, and finally move past the third tree from the right side", "episode_count": 1}
+{"task": "Proceed through the streetlight from the left side, then go past the tree from the right side", "episode_count": 1}
+{"task": "Progress through the first tree from the right side, then pass the second tree from the right side, and finally cross past the third tree from the left side", "episode_count": 1}
+{"task": "Pass through the tree from the left side and stop before the second tree", "episode_count": 1}
+{"task": "Need to travel through the signboard from the left side", "episode_count": 1}
+{"task": "Navigate past the first tree from the right side, then advance past the second tree from the left side", "episode_count": 1}
+{"task": "Need to travel through the fitness equipment from the top side", "episode_count": 1}
+{"task": "Please pass through the tree and streetlights from the right side", "episode_count": 1}
+{"task": "Request to travel past the first tree from the left side, then past the second tree from the right side, then past the third tree from the right side", "episode_count": 1}
+{"task": "Need to travel through the roadside pole from the left side", "episode_count": 1}
+{"task": "Please navigate through the first tree from the left side, then through the second tree from the right side", "episode_count": 1}
+{"task": "Please navigate through the middle streetlight from the right side, then proceed past the middle tree from the right side", "episode_count": 1}
+{"task": "Suggest moving past the first tree from the right side, and the second tree from the top side", "episode_count": 1}
+{"task": "Pass through the first tree from the left side, then pass through the second and third tree from the left side", "episode_count": 1}
+{"task": "Please make way through the tree from the right side", "episode_count": 1}
+{"task": "Need to travel through the first tree from the left side, then pass through the street light from the left side", "episode_count": 1}
+{"task": "Request to travel past the first tree from the right side, then past the second tree from the right side, and finally past the third tree from the left side", "episode_count": 1}
+{"task": "Proceed through the tree from the left side, then pass through the road sign from the right side", "episode_count": 1}
+{"task": "Pass through the tree from the right side, then take off and pass through the roof", "episode_count": 1}
+{"task": "First pass the first tree from the left side, then proceed through the first and second tree from the left side, finally approach the third tree from the right side", "episode_count": 1}
+{"task": "Pass by the tree from the left side", "episode_count": 1}
+{"task": "Suggest crossing through the right tree from the left side, then crossing through the middle tree from the left side", "episode_count": 1}
+{"task": "Proceed through the first tree from the left side, then cross past the second tree from the right side, and finally advance through the third tree from the right side", "episode_count": 1}
+{"task": "Advance through the middle tree from the left side, then move past the front tree from the right side", "episode_count": 1}
+{"task": "Make way through the roadside pole from the right side", "episode_count": 1}
+{"task": "Pass by the right tree from the left side, then pass by the middle tree from the left side", "episode_count": 1}
+{"task": "Need to make way past the camera pole from the right side", "episode_count": 1}
+{"task": "Please navigate through the first tree from the right side, then through the second tree from the left side, and finally through the third tree from the left side", "episode_count": 1}
+{"task": "Progress through the stone from the left side", "episode_count": 1}
+{"task": "Progress past the small lamp post from the left side", "episode_count": 1}
+{"task": "Navigate past the left side from the right, then proceed through the tree ahead from the right side", "episode_count": 1}
+{"task": "Please go past the tree from the right side", "episode_count": 1}
+{"task": "Make way through the road sign from the right side, then proceed past the middle tree from the right side", "episode_count": 1}
+{"task": "Suggest going through the signboard and tree from the right side", "episode_count": 1}
+{"task": "Proceed through the first tree from the left side, then pass the second tree from the left side, and finally go past the third tree from the right side", "episode_count": 1}
+{"task": "Pass through the signboard from the left side, then pass through the first tree from the right side", "episode_count": 1}
+{"task": "Proceed past the first tree from the left side, then navigate through the second tree from the left side, and approach the third tree from the right side", "episode_count": 1}
+{"task": "Please go past the first tree from the right side, then pass by the first streetlight from the left side", "episode_count": 1}
+{"task": "Navigate past the lifebuoy from the right side", "episode_count": 1}
+{"task": "Progress through the side room from the right side", "episode_count": 1}
+{"task": "Go through the first tree from the right side, then through the second tree from the left side, and finally through the third tree from the right side", "episode_count": 1}
+{"task": "Please navigate through the left tree from the right side, then navigate through the middle tree from the right side", "episode_count": 1}
+{"task": "Proceed through the middle streetlight from the right side, then pass by the front tree from the left side", "episode_count": 1}
+{"task": "Please make way through the right-side tree from the left side, then through the middle tree from the right side", "episode_count": 1}
+{"task": "Make way past the first tree from the right side, and proceed past the second tree from the above side, advance past the third tree from the above side", "episode_count": 1}
+{"task": "Request to advance past the tree from the left side, then approach the right side of the tree ahead", "episode_count": 1}
+{"task": "Cross past the tree from the left side, then cross past the streetlights from the left side", "episode_count": 1}
+{"task": "Suggest going through the fitness equipment from the right side", "episode_count": 1}
+{"task": "Navigate past the first streetlight from the right side, then proceed past the second tree from the right side, and finally advance past the third tree from the left side", "episode_count": 1}
+{"task": "Proceed to the second tree on the left side after bypassing the first tree from the right", "episode_count": 1}
+{"task": "Cross through the streetlight from the left side, then approach the tree from the left side", "episode_count": 1}
+{"task": "Back out from the road sign", "episode_count": 1}
+{"task": "Please go back from the basketball hoop on the front side", "episode_count": 1}
+{"task": "Please withdraw from the windmill house ahead", "episode_count": 1}
+{"task": "Request to back away from the cone ahead", "episode_count": 1}
+{"task": "Move off from the parachute", "episode_count": 1}
+{"task": "Move back from the display pillar ahead", "episode_count": 1}
+{"task": "Please retreat from the signboard ahead", "episode_count": 1}
+{"task": "Back away from the white pillar on the front side", "episode_count": 1}
+{"task": "Need to withdraw from the streetlight flag on the front side", "episode_count": 1}
+{"task": "Need to withdraw from the iron box ahead", "episode_count": 1}
+{"task": "Retreat from the stone on the front side", "episode_count": 1}
+{"task": "Please withdraw from the road pole ahead", "episode_count": 1}
+{"task": "Need to step away from the streetlight flag ahead", "episode_count": 1}
+{"task": "Request to back up from the fire hydrant on the front side", "episode_count": 1}
+{"task": "Please retreat from the display screen ahead", "episode_count": 1}
+{"task": "Withdraw from the corner of the building ahead", "episode_count": 1}
+{"task": "Suggest retreating from the speed limit sign on the front side", "episode_count": 1}
+{"task": "Withdraw from the streetlight flag", "episode_count": 1}
+{"task": "Back off from the iron box", "episode_count": 1}
+{"task": "Need to retreat from the roadside pole ahead", "episode_count": 1}
+{"task": "Back off from the metal box ahead", "episode_count": 1}
+{"task": "Move off from the streetlight ahead", "episode_count": 1}
+{"task": "Go back from the sign ahead", "episode_count": 1}
+{"task": "Move backward from the camera pole on the front side", "episode_count": 1}
+{"task": "Please withdraw from the small lamp post ahead", "episode_count": 1}
+{"task": "Please pull back from the signboard ahead", "episode_count": 1}
+{"task": "Move away from the door on the front side", "episode_count": 1}
+{"task": "Back away from the statue ahead", "episode_count": 1}
+{"task": "Please pull back from the trash bin ahead", "episode_count": 1}
+{"task": "Suggest retreating from the pillar ahead", "episode_count": 1}
+{"task": "Move away from the life buoy ahead", "episode_count": 1}
+{"task": "Withdraw from the fire hydrant on the front side", "episode_count": 1}
+{"task": "Request to turn to face the back of the tree and rotate counterclockwise for 4 circles", "episode_count": 1}
+{"task": "Rotate in the direction of the clockwise", "episode_count": 1}
+{"task": "Request to spin in the direction of the counterclockwise sculpture", "episode_count": 1}
+{"task": "Need to spin to face the tree counterclockwise", "episode_count": 1}
+{"task": "Please rotate in clockwise direction", "episode_count": 1}
+{"task": "Rotate in counterclockwise direction for one full circle", "episode_count": 1}
+{"task": "Please turn to the clockwise", "episode_count": 1}
+{"task": "Spin counterclockwise once behind the signboard", "episode_count": 1}
+{"task": "Suggest turning in the direction of the clockwise behind the tree for one circle", "episode_count": 1}
+{"task": "Shift in the direction of the left side of the speed limit sign", "episode_count": 1}
+{"task": "Translate toward the left side of the big tree", "episode_count": 1}
+{"task": "Please shift in left direction and ascend", "episode_count": 1}
+{"task": "Please translate toward the right", "episode_count": 1}
+{"task": "Request to translate toward the upper right side", "episode_count": 1}
+{"task": "Translate in the direction of the bicycle's right side", "episode_count": 1}
+{"task": "Please shift toward the right side of the iron box", "episode_count": 1}
+{"task": "Please shift toward the right side of the tree", "episode_count": 1}
+{"task": "Request to shift toward the upper right", "episode_count": 1}
+{"task": "Translate to the right side of the cone", "episode_count": 1}
+{"task": "Translate toward the upper left", "episode_count": 1}
+{"task": "Shift to the left side of the cone", "episode_count": 1}
+{"task": "Translate toward the left side of the iron box", "episode_count": 1}
+{"task": "Translate in the lower-left direction", "episode_count": 1}
+{"task": "Request to translate in the left side of the fire hydrant direction", "episode_count": 1}
+{"task": "Please translate toward the left then to the right side of the tree", "episode_count": 1}
+{"task": "Shift toward the left side of the bicycle", "episode_count": 1}
+{"task": "Shift toward the right side of the speed limit sign", "episode_count": 1}
+{"task": "Request to shift toward the right side of the tree", "episode_count": 1}
+{"task": "Go about the signboard in counterclockwise direction", "episode_count": 1}
+{"task": "Suggest navigating about the pole in counterclockwise direction", "episode_count": 1}
+{"task": "Turn around the building in counterclockwise direction", "episode_count": 1}
+{"task": "Please circle the windmill in counterclockwise direction", "episode_count": 1}
+{"task": "Revolve about the fire hydrant in counterclockwise direction", "episode_count": 1}
+{"task": "Orbit about the fire hydrant in counterclockwise direction", "episode_count": 1}
+{"task": "Revolve around the white pillar in clockwise direction", "episode_count": 1}
+{"task": "Need to revolve about the roadside pole in counterclockwise direction", "episode_count": 1}
+{"task": "Travel around the school motto in clockwise direction", "episode_count": 1}
+{"task": "Request to rotate around the tree in xx direction", "episode_count": 1}
+{"task": "Orbit about the streetlight", "episode_count": 1}
+{"task": "Fly around the iron box in counterclockwise direction", "episode_count": 1}
+{"task": "Circle about the display pillar in counterclockwise direction", "episode_count": 1}
+{"task": "Move about the target in counterclockwise direction", "episode_count": 1}
+{"task": "Request to rotate around the cone in counterclockwise direction", "episode_count": 1}
+{"task": "Suggest navigating about the streetlight flag in counterclockwise direction", "episode_count": 1}
+{"task": "Go about the statue in counterclockwise direction", "episode_count": 1}
+{"task": "Please travel about the small lamp post in counterclockwise direction", "episode_count": 1}
+{"task": "Move about the lifebuoy in counterclockwise direction", "episode_count": 1}
+{"task": "Travel around the stone in counterclockwise direction", "episode_count": 1}
+{"task": "Suggest navigating about the umbrella in counterclockwise direction", "episode_count": 1}
+{"task": "Request to move around the fire hydrant in circular direction", "episode_count": 1}
+{"task": "Orbit the goal in counterclockwise direction", "episode_count": 1}
+{"task": "Please travel about the signboard in counterclockwise direction", "episode_count": 1}
+{"task": "Surround the building in clockwise direction", "episode_count": 1}
+{"task": "Orbit about the signboard", "episode_count": 1}
+{"task": "Suggest revolving around the substation in a counterclockwise direction", "episode_count": 1}
+{"task": "Suggest revolving around the pillar", "episode_count": 1}
+{"task": "Orbit the statue in clockwise direction", "episode_count": 1}

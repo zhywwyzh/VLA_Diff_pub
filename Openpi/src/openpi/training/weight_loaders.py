@@ -73,6 +73,40 @@ class PaliGemmaWeightLoader(WeightLoader):
         return _merge_params(loaded_params, params, missing_regex=".*")
 
 
+@dataclasses.dataclass(frozen=True)
+class Pi0BaseWithNativePaliGemmaLoader(WeightLoader):
+    """Loads weights from the pi0_base checkpoint, but overwrites the PaliGemma
+    part with the original pre-trained PaliGemma weights.
+    """
+
+    pi0_base_params_path: str = "s3://openpi-assets/checkpoints/pi0_base/params"
+
+    def load(self, params: at.Params) -> at.Params:
+        # 1. Load the pi0_base checkpoint which contains pre-trained action expert.
+        # This returns a PyTree of actual np.ndarray weights.
+        logger.info(f"Loading base weights from {self.pi0_base_params_path}")
+        pi0_base_weights = _model.restore_params(
+            download.maybe_download(self.pi0_base_params_path), restore_type=np.ndarray
+        )
+
+        # 2. Load native PaliGemma weights.
+        # This also returns a PyTree of actual np.ndarray weights.
+        logger.info("Loading native PaliGemma weights.")
+        native_paligemma_loader = PaliGemmaWeightLoader()
+        # We pass a dummy empty dict `{}` because we only want the loaded weights,
+        # not the result of any merge operations yet.
+        native_paligemma_weights = native_paligemma_loader.load({})
+
+        # 3. Merge the two sets of loaded weights. The native PaliGemma weights
+        # will overwrite the VLM part from the pi0_base checkpoint.
+        # The `params` argument here is the model skeleton with ShapeDtypeStructs.
+        merged_loaded_weights = _merge_params(native_paligemma_weights, pi0_base_weights, missing_regex=".*")
+
+        # 4. Finally, merge the combined actual weights with the model skeleton
+        # to add any missing parameters like LoRA layers.
+        return _merge_params(merged_loaded_weights, params, missing_regex=".*lora.*")
+
+
 def _merge_params(loaded_params: at.Params, params: at.Params, *, missing_regex: str) -> at.Params:
     """Merges the loaded parameters with the reference parameters.
 
