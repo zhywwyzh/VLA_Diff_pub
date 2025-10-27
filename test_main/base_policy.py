@@ -314,7 +314,7 @@ class BasePolicyNode(object):
                 bbox_depth = frame.depth_image[y1:y2+1, x1:x2+1].astype(np.float64)
                 
                 # 找到有效点（深度小于 5.0 - 1e-6）
-                valid_mask = (bbox_depth < 5.0 - 1e-6) & (bbox_depth > 1e-6)
+                valid_mask = (bbox_depth < 5.0 - 1e-6) & (bbox_depth > 0.1 + 1e-6)
                 valid_depths = bbox_depth[valid_mask]
                 
                 if len(valid_depths) == 0:
