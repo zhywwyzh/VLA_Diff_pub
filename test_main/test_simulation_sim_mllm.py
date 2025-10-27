@@ -48,12 +48,12 @@ class UAVPolicyNode(BasePolicyNode):
         self.last_command = None
         self.first_rgb = None
         self.prepare_content = [
-            # "请原地右转90度",
-            # "前往最近的椅子",
-            # "请原地左转60度",
-            # "前往黄色架子第二层",
-            # "请原地左转90度"
-            # "前往黄色大柜子",
+            "请原地右转90度",
+            "前往最近的椅子",
+            "请原地左转60度",
+            "前往黄色架子第二层",
+            "请原地左转90度"
+            "前往黄色大柜子",
             "前往白色柱子",
             "请原地右转90度"
             ]
@@ -62,12 +62,12 @@ class UAVPolicyNode(BasePolicyNode):
         # self.pre_prompt = self.prepare_content
         # self.pre_prompt.append("完成任务")
         self.pre_prompt = [
-            # "请原地右转90度",
-            # "前往最近的椅子",
-            # "请原地左转60度",
-            # "前往黄色架子第二层",
-            # "请原地左转90度",
-            # "前往黄色大柜子",
+            "请原地右转90度",
+            "前往最近的椅子",
+            "请原地左转60度",
+            "前往黄色架子第二层",
+            "请原地左转90度",
+            "前往黄色大柜子",
             "前往白色柱子",
             "请原地右转90度",
             "完成任务"
@@ -96,6 +96,7 @@ class UAVPolicyNode(BasePolicyNode):
         self.bbox = [0, 0, 0, 0]
         self.first_bbox = []
         self.if_plan = False
+        self.see_none = 0
         # TODO 限制重规划次数，需要删除
         self.replan_count = 0
 
@@ -269,7 +270,7 @@ class UAVPolicyNode(BasePolicyNode):
                             self.publish_command_content(self.command_content)
                             # self.vla_state = VLA_STATE.PLAN
                             self.if_plan = True
-                            time.sleep(3)
+                            time.sleep(2)
                         else:
                             time.sleep(1)
                             # replan_times -= 1
@@ -632,6 +633,7 @@ class UAVPolicyNode(BasePolicyNode):
                             current_frame = self.frame
                             self.bbox, self.result, self.finish_mission = open_serve(self.first_rgb, current_frame.rgb_image, cmd)
                             if self.bbox is not None:
+                                self.see_none = 0
                                 # 发布bbox图像
                                 pt1 = (int(self.bbox[0]), int(self.bbox[1]))
                                 pt2 = (int(self.bbox[2]), int(self.bbox[3]))
@@ -643,7 +645,26 @@ class UAVPolicyNode(BasePolicyNode):
                                 rospy.loginfo(f"推理耗时: {time.time() - origin_time:.2f} 秒")
                                 # print(f"像素中心位于：{self.result}")
                                 # pdb.set_trace()
-                                waypoint = self.pixel_to_world(self.result, current_frame, percent_point=0.2)
+                                waypoint = self.pixel_to_world(self.result, current_frame, percent_point=0.3)
+
+                                distance = np.linalg.norm(np.array(waypoint[:3]) - np.array(self.frame.current_state[:3]))
+                                if distance < 0.3:
+                                    rospy.loginfo("距离过近，暂不发布动作")
+                                    self.command_content.pop(0)
+                                    self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+                                    continue
+                            elif self.see_none < 5:
+                                rospy.logwarn("未能识别到目标物体，重新规划")
+                                self.command_content.pop(0)
+                                self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+                                self.see_none += 1
+                                continue
+                            else:
+                                self.see_none = 0
+                                rospy.logwarn("连续多次未能识别到目标物体，当前任务结束")
+                                self.finish_mission = True
+                                self.ego_state_trigger = True
+
                             if self.first_frame is None:
                                 self.first_frame = current_frame
                                 self.first_bbox = self.bbox
@@ -658,7 +679,7 @@ class UAVPolicyNode(BasePolicyNode):
                             if self.finish_mission:
                                 self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
                                 self.finish_command = True    
-                                time.sleep(0.1)                            
+                                time.sleep(0.1)
                                 # self.command_content.pop(0)
                                 # self.waypoint = self.calculate_plan_yaw(self.first_waypoint, self.first_frame, current_frame, self.over_edge)
                                 # self.if_yaw = True
@@ -729,6 +750,7 @@ class UAVPolicyNode(BasePolicyNode):
                     rospy.loginfo("收到 GO_ORIGIN 指令")
                     self.go_origin = True
                     roll, pitch, yaw = self.quaternion_to_euler(0, 0, 0.998, 0.062)
+                    # rospy.loginfo(f"回原点姿态: roll={math.degrees(roll):.1f}°, pitch={math.degrees(pitch):.1f}°, yaw={math.degrees(yaw):.1f}°")
                     yaw = 0
                     self.waypoint = [22.425, -1.338, 1,
                                  0, 0, math.pi]
