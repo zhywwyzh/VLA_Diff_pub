@@ -1,6 +1,6 @@
 export CUDA_VISIBLE_DEVICES=0
 
-vllm serve /home/diff/workspace/VLA_Diff/output/mission_sharegpt_qwen3_8b_freeze_order_skip_empty_awq \
+vllm serve /home/diff/workspace/VLA_Diff/output/mission_sharegpt_qwen25_freeze_order_skip_empty_awq \
   --dtype auto \
   --port 4514 \
   --max-model-len 3000 \
