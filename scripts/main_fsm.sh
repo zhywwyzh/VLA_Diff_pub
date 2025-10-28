@@ -19,4 +19,4 @@ source /home/diff/workspace/VLA_Diff/simulation/cv_bridge/devel/setup.bash
 
 unset all_proxy; unset ALL_PROXY;
 
-python test_main/test_simulation_real_mllm.py
+python test_main/test_simulation_real.py

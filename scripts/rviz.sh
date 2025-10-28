@@ -16,4 +16,4 @@ unset COLCON_PREFIX_PATH
 source /opt/ros/noetic/setup.bash
 source Openpi/.venv/bin/activate
 source simulation/cv_bridge/devel/setup.bash
-rviz -d /home/diff/workspace/VLA_Diff/rviz_cfg.rviz
+rviz -d /home/diff/workspace/VLA_Diff/simulation/cv_bridge/rviz_cfg.rviz
