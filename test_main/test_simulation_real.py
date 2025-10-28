@@ -96,6 +96,7 @@ class UAVPolicyNode(BasePolicyNode):
         self.bbox = [0, 0, 0, 0]
         self.first_bbox = []
         self.if_plan = False
+        self.see_none = 0
         # TODO 限制重规划次数，需要删除
         self.replan_count = 0
 
@@ -643,7 +644,25 @@ class UAVPolicyNode(BasePolicyNode):
                                 rospy.loginfo(f"推理耗时: {time.time() - origin_time:.2f} 秒")
                                 # print(f"像素中心位于：{self.result}")
                                 # pdb.set_trace()
-                                waypoint = self.pixel_to_world(self.result, current_frame, percent_point=0.2)
+                                waypoint = self.pixel_to_world(self.result, current_frame, percent_point=0.3)
+
+                                distance = np.linalg.norm(np.array(waypoint[:3]) - np.array(self.frame.current_state[:3]))
+                                if distance < 0.3:
+                                    rospy.loginfo("距离过近，暂不发布动作")
+                                    self.command_content.pop(0)
+                                    self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+                                    continue
+                            elif self.see_none < 5:
+                                rospy.logwarn("未能识别到目标物体，重新规划")
+                                self.command_content.pop(0)
+                                self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+                                self.see_none += 1
+                                continue
+                            else:
+                                self.see_none = 0
+                                rospy.logwarn("连续多次未能识别到目标物体，当前任务结束")
+                                self.finish_mission = True
+                                self.ego_state_trigger = True
                             if self.first_frame is None:
                                 self.first_frame = current_frame
                                 self.first_bbox = self.bbox
