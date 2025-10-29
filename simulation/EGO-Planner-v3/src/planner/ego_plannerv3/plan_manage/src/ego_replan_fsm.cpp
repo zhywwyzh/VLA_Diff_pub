@@ -156,6 +156,7 @@ namespace ego_planner
 
     case GEN_NEW_TRAJ:
     {
+      setYaw(odom_euler_[0], odom_euler_[0], odom_pos_, true);
       bool success = planFromGlobalTraj(10); // zx-todo
       ROS_WARN("GEN_NEW_TRAJ!: %d", success);
 
@@ -1130,6 +1131,8 @@ namespace ego_planner
 
     odom_q_ = Eigen::Quaterniond(msg->pose.pose.orientation.w, msg->pose.pose.orientation.x,
                                  msg->pose.pose.orientation.y, msg->pose.pose.orientation.z);
+
+    odom_euler_ = odom_q_.toRotationMatrix().eulerAngles(0, 1, 2);
 
     if (!yaw_cmd_.yaw_reach)
     {

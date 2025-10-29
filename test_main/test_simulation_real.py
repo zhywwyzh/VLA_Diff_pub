@@ -59,19 +59,8 @@ class UAVPolicyNode(BasePolicyNode):
             ]
         self.command_content = []
         self.content = self.prepare_content.copy()
-        # self.pre_prompt = self.prepare_content
-        # self.pre_prompt.append("完成任务")
-        self.pre_prompt = [
-            "前往最左侧的白色柱子",
-            "前往最近的椅子",
-            "请原地左转60度",
-            "前往黄色架子第二层",
-            "请原地左转90度",
-            "前往黄色大柜子",
-            "前往白色柱子",
-            "请原地右转90度",
-            "完成任务"
-        ]
+        self.pre_prompt = self.prepare_content
+        self.pre_prompt.append("完成任务")
         self.prompt_bf = self.pre_prompt.copy()
         self.replan_time = [0, 0, 0, 0, 0, 0, 0]
         self.replan_bf = self.replan_time.copy()
@@ -101,6 +90,8 @@ class UAVPolicyNode(BasePolicyNode):
         self.vis_first = False          # 起始状态是否看到目标
         self.vis_cur = False            # 当前是否看到目标
         self.over_edge = False          # 检测到的物体是否在深度之外
+        self.if_safe_dis = True         # 是否保持安全距离
+        self.safe_dis = 0.7             # 安全距离阈值
 
         # 搜索相关参数
         self.replan_count = 0           # 重规划计数
@@ -110,6 +101,9 @@ class UAVPolicyNode(BasePolicyNode):
         self.max_z_search = 2           # 最大向上搜索次数
         self.cur_z_search = 0           # 当前向上搜索次数
         self.search_rot_z = 0.5         # 搜索时候每次向上移动的距离
+        self.back_percent = 0.5         # 向后搜索相关参数
+        self.allow_min_depth = 0.5      # 允许的最小距离障碍物深度
+        self.back_dis = 0.5             # 障碍物过多搜索时候后退的距离
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.dirname(current_dir)
@@ -398,6 +392,30 @@ class UAVPolicyNode(BasePolicyNode):
             return self.mllm_message
         return None
 
+    def backoff_waypoint(self):
+        depth = self.frame.depth_image
+        valid_depth = np.isfinite(depth) & (depth > 0.1 + 1e-6)
+        valid_count = int(valid_depth.sum())
+        if valid_count == 0:
+            rospy.logwarn("深度图无有效数据，无法判断是否需要后退")
+            return None
+        close_ratio = float ((depth[valid_depth] < self.allow_min_depth).mean())
+
+        if close_ratio > self.back_percent:
+            xyz = self.frame.current_state[:3]
+            yaw = self.frame.current_state[5]
+
+            dx = -self.back_dis * math.cos(yaw)
+            dy = -self.back_dis * math.sin(yaw)
+
+            new_x = xyz[0] + dx
+            new_y = xyz[1] + dy
+            new_z = xyz[2]
+
+            waypoint = np.array([new_x, new_y, new_z, 0.0, 0.0, yaw], dtype=np.float64)
+            return waypoint
+        return None
+
     # TODO 修改监听端口
     # def listen_messages(self):
     #     """循环监听mllm新消息"""
@@ -659,6 +677,14 @@ class UAVPolicyNode(BasePolicyNode):
                             # print("准备下一项目")
 
                         elif is_label_cmd(cmd):
+                            # 执行后退观察动作
+                            back_waypoint = self.backoff_waypoint()
+                            if back_waypoint is not None:
+                                rospy.loginfo("检测到距离障碍物过近，执行后退观察动作")
+                                self.waypoint = back_waypoint
+                                self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+                                self.publish_action(back_waypoint, look_forward=False)
+                                continue
                             self.is_label = True
                             if not self.first_plan:
                                 self.first_plan = True
@@ -777,7 +803,13 @@ class UAVPolicyNode(BasePolicyNode):
                                 rospy.loginfo(f"推理耗时: {time.time() - origin_time:.2f} 秒")
                                 # print(f"像素中心位于：{self.result}")
                                 # pdb.set_trace()
-                                waypoint = self.pixel_to_world(self.result, current_frame, percent_point=0.3)
+                                pattern = re.compile(r'的(左侧|右侧|上方|下方)\s*(?:。|\.)')
+                                match = re.search(pattern, cmd)
+                                if match:
+                                    direction = match.group(1)
+                                    rospy.loginfo(f"检测到方位关键词：{direction}，将 if_safe_dis 置为 False")
+                                    self.if_safe_dis = False
+                                waypoint = self.pixel_to_world(self.result, current_frame, percent_point=0.3, direction=direction)
 
                                 distance = np.linalg.norm(np.array(waypoint[:3]) - np.array(self.frame.current_state[:3]))
                                 if distance < 0.3:

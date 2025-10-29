@@ -36,6 +36,7 @@ class BasePolicyNode(object):
         self.frame: Optional[Frame] = None
         self.depth_info = None
         self.extrinsics = np.array([0.0, 0, 0.0], dtype=np.float64)
+        self.if_safe_dis = True
         self.safe_dis = 0.3
         self.use_intrinsics = True
         self.depth_scale_param = 57.0
@@ -272,7 +273,7 @@ class BasePolicyNode(object):
             raise ValueError(f"Unknown depth mode: {mode}")
 
     def pixel_to_world(self, results, frame: Frame,
-                       depth_scale=1.0, window=0, depth_mode="z", 
+                       depth_scale=1.0, window=0, depth_mode="z", direction: str = "",
                        avg_depth=True, percent_point=0.2, use_median=True):
         """
         输入：检测结果(像素 u,v)、帧快照
@@ -360,10 +361,11 @@ class BasePolicyNode(object):
             over_edge = True
             depth_raw = 5.0
         # print(f"depth:{depth_raw}")
-        if depth_raw > 1.0 + 1e-6:
+        if depth_raw > 1.0 + 1e-6 and self.if_safe_dis:
             depth_val = (depth_raw - self.safe_dis) * depth_scale
         else:
             depth_val = depth_raw * depth_scale
+            self.if_safe_dis = True
         if not np.isfinite(depth_val) or depth_val <= 0:
             raise ValueError(f"无效深度 depth={depth_val}")
 
