@@ -26,7 +26,7 @@ from quadrotor_msgs.msg import GoalSet
 import cv2
 from cv_bridge import CvBridge
 
-from utils.vlm.openai_serve_ori import open_serve
+from utils.vlm.openai_serve_real import open_serve_nav, open_serve_search
 from utils.param import COMMAND_TYPE, VLA_STATE
 
 from base_policy_real import BasePolicyNode  # 假定已有 ROS1 版本或与 ROS 无关的 Base
@@ -97,8 +97,17 @@ class UAVPolicyNode(BasePolicyNode):
         self.first_bbox = []
         self.if_plan = False
         self.see_none = 0
-        # TODO 限制重规划次数，需要删除
+        self.vis_first = False
+        self.vis_cur = False
+
+        # 搜索相关参数
         self.replan_count = 0
+        self.max_yaw_search = 6   # 最大搜索次数
+        self.cur_yaw_search = 0   # 当前搜索次数
+        self.search_rot_yaw = 60  # 搜索时候每次旋转的角度
+        self.max_z_search = 2     # 最大向上搜索次数
+        self.cur_z_search = 0     # 当前向上搜索次数
+        self.search_rot_z = 0.5     # 搜索时候每次向上移动的距离
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.dirname(current_dir)
@@ -259,7 +268,7 @@ class UAVPolicyNode(BasePolicyNode):
                     self.command_content.append(self.replan_content)
                     self.publish_command_content(self.command_content)
                     self.vla_state = VLA_STATE.PLAN
-                    time.sleep(3)
+                    time.sleep(0.5)
                     # while replan_times > 0:
                     while not self.finish_mission:
                         if self.finish_command:
@@ -270,7 +279,7 @@ class UAVPolicyNode(BasePolicyNode):
                             self.publish_command_content(self.command_content)
                             # self.vla_state = VLA_STATE.PLAN
                             self.if_plan = True
-                            time.sleep(3)
+                            time.sleep(0.5)
                         else:
                             time.sleep(1)
                             # replan_times -= 1
@@ -607,12 +616,12 @@ class UAVPolicyNode(BasePolicyNode):
                                 yaw
                             ], dtype=np.float64)
                             self.waypoint = waypoint
-                            self.publish_action(waypoint, look_forward=False)
-                            self.command_content.pop(0)
                             self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+                            self.command_content.pop(0)
                             self.finish_mission = True
                             self.finish_command = True
-                            time.sleep(3)
+                            self.publish_action(waypoint, look_forward=False)
+                            time.sleep(2)
                             # self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
                             # type_msg = Int32()
                             # type_msg.data = 8
@@ -631,7 +640,83 @@ class UAVPolicyNode(BasePolicyNode):
                             origin_time = time.time()
                             rgb_image = self.frame.rgb_image
                             current_frame = self.frame
-                            self.bbox, self.result, self.finish_mission = open_serve(self.first_rgb, current_frame.rgb_image, cmd)
+                            self.vis_first = open_serve_search(self.first_rgb, cmd)
+
+                            if not self.vis_first:
+                                if self.cur_yaw_search < self.max_yaw_search:
+                                    if self.cur_yaw_search < self.max_yaw_search // 2:
+                                        rospy.loginfo(f"目标未见，原地左转{self.search_rot_yaw}度继续搜索")
+                                        xyz = self.frame.current_state[:3]
+                                        yaw = self.frame.current_state[5] + self.search_rot_yaw / 180 * math.pi
+                                        waypoint = np.array([
+                                            xyz[0],
+                                            xyz[1],
+                                            xyz[2],
+                                            0.0,
+                                            0.0,
+                                            yaw
+                                        ], dtype=np.float64)
+                                        self.waypoint = waypoint
+                                        self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+                                        self.command_content.pop(0)
+                                        self.publish_action(waypoint, look_forward=False)
+                                        time.sleep(1)
+                                    else:
+                                        rospy.loginfo(f"目标未见，原地右转{self.search_rot_yaw}度继续搜索")
+                                        if self.cur_yaw_search == self.max_yaw_search // 2 :
+                                            k = self.cur_yaw_search + 1
+                                        else:
+                                            k = 1
+                                        xyz = self.frame.current_state[:3]
+                                        yaw = self.frame.current_state[5] - k * self.search_rot_yaw / 180 * math.pi
+                                        waypoint = np.array([
+                                            xyz[0],
+                                            xyz[1],
+                                            xyz[2],
+                                            0.0,
+                                            0.0,
+                                            yaw
+                                        ], dtype=np.float64)
+                                        self.waypoint = waypoint
+                                        self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+                                        self.command_content.pop(0)
+                                        self.publish_action(waypoint, look_forward=False)
+                                        time.sleep(1)
+                                    self.first_plan = False
+                                    self.cur_yaw_search += 1
+                                    continue
+                                elif self.cur_z_search < self.max_z_search:
+                                    rospy.loginfo(f"目标未见，向上移动{self.search_rot_z}米继续搜索")
+                                    xyz = self.frame.current_state[:3]
+                                    z = xyz[2] + self.search_rot_z
+                                    yaw = self.frame.current_state[5] + self.max_yaw_search // 2 * self.search_rot_yaw / 180 * math.pi
+                                    waypoint = np.array([
+                                        xyz[0],
+                                        xyz[1],
+                                        z,
+                                        0.0,
+                                        0.0,
+                                        yaw
+                                    ], dtype=np.float64)
+                                    self.waypoint = waypoint
+                                    self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+                                    self.command_content.pop(0)
+                                    self.publish_action(waypoint, look_forward=False)
+                                    time.sleep(1)
+                                    self.first_plan = False
+                                    self.cur_z_search += 1
+                                    self.cur_yaw_search = 0
+                                    continue
+                                else:
+                                    self.cur_yaw_search = 0
+                                    self.cur_z_search = 0
+                                    rospy.logwarn("连续多次未能识别到目标物体，当前任务结束")
+                                    self.finish_mission = True
+                                    self.ego_state_trigger = True
+                                    self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
+                                    continue
+
+                            self.bbox, self.result, self.finish_mission = open_serve_nav(self.first_rgb, current_frame.rgb_image, cmd)
                             if self.bbox is not None:
                                 # 发布bbox图像
                                 pt1 = (int(self.bbox[0]), int(self.bbox[1]))
