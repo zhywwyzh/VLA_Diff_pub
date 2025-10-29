@@ -116,7 +116,7 @@ def open_serve_nav(img_first, img_cur, input1):
         <image>
         你将得到首次观察rgb图像、当前观察的rgb图像。
         请判断当前观察的rgb图像中，能否看到首次观察rgb图像中的{input2}。如果可以，则回复vis_cur为true，否则为false。
-        如果可以看到给出{input2}的bounding box，否则出none，除上述什么都不要给我。
+        给出看到的{input2}的bounding box，否则出none，除上述什么都不要给我。
         最终按照json格式{{\"bbox_2d\": [x1, y1, x2, y2]或none, \"vis_cur\": true/false}}输出。
         """
         # 最终按照json格式{{\"bbox_2d\": [x1, y1, x2, y2]或none, \"mission_finish\": true/false}}输出。
