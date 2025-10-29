@@ -30,6 +30,7 @@ pipeline/venv
 output
 own_tools
 FTXUI/
+fish-speech/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
