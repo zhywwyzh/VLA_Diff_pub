@@ -80,34 +80,36 @@ class UAVPolicyNode(BasePolicyNode):
         self.command_type = COMMAND_TYPE.WAIT
         self.task_id_mllm = []
         self.task_id_vlm = []
-        self.vla_state = None
-        self.frame = None
-        self.ego_state_trigger = False
-        self.mllm_message = None
-        self.if_yaw = False
-        self.result = None
-        self.waypoint = None
-        self.finish_mission = False
-        self.first_plan = False
-        self.finish_command = False
-        self.go_origin = False
-        self.is_label = False
-        self.bridge = CvBridge()
-        self.bbox = [0, 0, 0, 0]
-        self.first_bbox = []
-        self.if_plan = False
-        self.see_none = 0
-        self.vis_first = False
-        self.vis_cur = False
+        self.vla_state = None           # 当前VLA FSM状态
+        self.frame = None               # 当前传感器接收数据
+        self.ego_state_trigger = False  # ego_planner结束状态触发
+        self.mllm_message = None        # 从mllm接收到的最新消息
+        self.if_yaw = False             # 是否在任务最后执行转角操作
+        self.result = None              # 当前模型返回结果
+        self.waypoint = None            # 当前导航目标点
+        self.first_plan = False         # 是否为第一次规划
+        # TODO 这里的任务是否完成和指令是否完成需要重新考虑设计
+        self.finish_mission = False     # 当前任务是否完成
+        self.finish_command = False     # 当前指令是否完成
+        self.go_origin = False          # 是否执行返回起点的任务
+        self.is_label = False           # 当前指令是否为目标搜索指令
+        self.bridge = CvBridge()        # CV桥接器
+        self.bbox = [0, 0, 0, 0]        # 当前观察结果的bbox
+        self.first_bbox = []            # 给定起始bbox
+        self.if_plan = False            # 是否进入规划状态
+        self.see_none = 0               # 连续未见目标计数
+        self.vis_first = False          # 起始状态是否看到目标
+        self.vis_cur = False            # 当前是否看到目标
+        self.over_edge = False          # 检测到的物体是否在深度之外
 
         # 搜索相关参数
-        self.replan_count = 0
-        self.max_yaw_search = 6   # 最大搜索次数
-        self.cur_yaw_search = 0   # 当前搜索次数
-        self.search_rot_yaw = 60  # 搜索时候每次旋转的角度
-        self.max_z_search = 2     # 最大向上搜索次数
-        self.cur_z_search = 0     # 当前向上搜索次数
-        self.search_rot_z = 0.5     # 搜索时候每次向上移动的距离
+        self.replan_count = 0           # 重规划计数
+        self.max_yaw_search = 6         # 最大搜索次数
+        self.cur_yaw_search = 0         # 当前搜索次数
+        self.search_rot_yaw = 60        # 搜索时候每次旋转的角度
+        self.max_z_search = 2           # 最大向上搜索次数
+        self.cur_z_search = 0           # 当前向上搜索次数
+        self.search_rot_z = 0.5         # 搜索时候每次向上移动的距离
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.dirname(current_dir)
@@ -267,9 +269,11 @@ class UAVPolicyNode(BasePolicyNode):
                     # rospy.loginfo(f"接受指令：{self.replan_content}")
                     self.command_content.append(self.replan_content)
                     self.publish_command_content(self.command_content)
-                    self.vla_state = VLA_STATE.PLAN
+                    # self.vla_state = VLA_STATE.PLAN
+                    self.if_plan = True
                     time.sleep(0.5)
                     # while replan_times > 0:
+                    # TODO 整合下finish_mission和finish_command，这两个参数现在应该是没有差异的
                     while not self.finish_mission:
                         if self.finish_command:
                             # self.finish_command = False
@@ -318,11 +322,34 @@ class UAVPolicyNode(BasePolicyNode):
         first_pos = first_frame.current_state[:3]      # [x, y, z]
         target_pos = np.array(first_waypoint[:3])     # [x, y, z]
         
+        # if not over_edge:
+        #     # 情况1：物体未超出极限范围，直接朝向目标点
+        #     direction_vector = target_pos - current_pos
+        #     target_yaw = math.atan2(direction_vector[1], direction_vector[0])
+        #     rospy.loginfo("物体未超出范围，直接朝向目标点")
         if not over_edge:
-            # 情况1：物体未超出极限范围，直接朝向目标点
-            direction_vector = target_pos - current_pos
-            target_yaw = math.atan2(direction_vector[1], direction_vector[0])
-            rospy.loginfo("物体未超出范围，直接朝向目标点")
+            # TODO 现在这个逻辑是根据仅进行一次旋转计算的
+            # 情况1：物体未超出极限范围，yaw朝向改为“起点->目标”与“起始朝向”的角平分线
+            first_yaw = float(first_frame.current_state[5])
+            # 射线1：起始位置 -> 目标位置
+            v1 = (target_pos[:2] - first_pos[:2]).astype(np.float64)
+            # 射线2：起始朝向对应的单位方向向量
+            v2 = np.array([math.cos(first_yaw), math.sin(first_yaw)], dtype=np.float64)
+            eps = 1e-6
+            if np.linalg.norm(v1) < eps:
+                # 起点与目标几乎重合：无法定义“起点->目标”方向，直接保持起始朝向
+                target_yaw = first_yaw
+            else:
+                u1 = v1 / (np.linalg.norm(v1) + eps)   # 单位化 “起点->目标”
+                b  = u1 + v2
+                if np.linalg.norm(b) < 1e-6:
+                    # 退化：两射线近乎反向（内角≈π），向量和接近0，选择朝向目标方向以避免不确定性
+                    target_yaw = math.atan2(u1[1], u1[0])
+                else:
+                    target_yaw = math.atan2(b[1], b[0])
+            # 将 yaw 归一化到 [-pi, pi]
+            rospy.loginfo("物体未超出范围，使用角平分线朝向（起始->目标 与 起始朝向）")
+
         else:
             # 情况2：物体超出极限范围，朝向两条射线的角平分线
             ray1 = target_pos - first_pos
@@ -400,7 +427,7 @@ class UAVPolicyNode(BasePolicyNode):
                         self.prepare_content = actions
                         self.pre_prompt = actions + ["完成任务"]
                         type_msg = Int32()
-                        type_msg.data = 8
+                        type_msg.data = COMMAND_TYPE.GET_PRE
                         self.type_pub.publish(type_msg)
                         self.finish_command = False
                         rospy.loginfo(f"更新任务列表: {self.prepare_content}")
@@ -413,7 +440,7 @@ class UAVPolicyNode(BasePolicyNode):
                         self.prepare_content = [f"原地{direction}转{degree}度"]
                         self.pre_prompt = [f"原地{direction}转{degree}度", "完成任务"]
                         type_msg = Int32()
-                        type_msg.data = 8
+                        type_msg.data = COMMAND_TYPE.GET_PRE
                         self.type_pub.publish(type_msg)
                         self.finish_command = False
                         rospy.loginfo(f"更新任务列表: {self.prepare_content}")
@@ -425,7 +452,7 @@ class UAVPolicyNode(BasePolicyNode):
                         self.prepare_content = [f"前往{destination[0]}"]
                         self.pre_prompt = [f"前往{destination[0]}", "完成任务"]
                         type_msg = Int32()
-                        type_msg.data = 8
+                        type_msg.data = COMMAND_TYPE.GET_PRE
                         self.type_pub.publish(type_msg)
                         self.finish_command = False
                         rospy.loginfo(f"更新任务列表: {self.prepare_content}")
@@ -565,7 +592,10 @@ class UAVPolicyNode(BasePolicyNode):
                     if not self.command_content:
                         # self.vla_state = VLA_STATE.FINISH
                         # rospy.loginfo("当前任务为空，请传入下一步任务")
-                        time.sleep(1)
+                        if self.if_plan:
+                            self.vla_state = VLA_STATE.PLAN
+                            self.if_plan = False
+                        time.sleep(0.1)
                         continue
 
                 case VLA_STATE.REPLY_MLLM:
@@ -624,7 +654,7 @@ class UAVPolicyNode(BasePolicyNode):
                             time.sleep(2)
                             # self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
                             # type_msg = Int32()
-                            # type_msg.data = 8
+                            # type_msg.data = COMMAND_TYPE.GET_PRE
                             # self.type_pub.publish(type_msg)
                             # print("准备下一项目")
 
@@ -660,6 +690,12 @@ class UAVPolicyNode(BasePolicyNode):
                                         self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
                                         self.command_content.pop(0)
                                         self.publish_action(waypoint, look_forward=False)
+
+                                        # TODO 这里是没有replan的逻辑，后续加入replan后删除
+                                        self.command_content.append(self.replan_content)
+                                        self.publish_command_content(self.command_content)
+                                        self.if_plan = True
+
                                         time.sleep(1)
                                     else:
                                         rospy.loginfo(f"目标未见，原地右转{self.search_rot_yaw}度继续搜索")
@@ -681,6 +717,12 @@ class UAVPolicyNode(BasePolicyNode):
                                         self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
                                         self.command_content.pop(0)
                                         self.publish_action(waypoint, look_forward=False)
+
+                                        # TODO 这里是没有replan的逻辑，后续加入replan后删除
+                                        self.command_content.append(self.replan_content)
+                                        self.publish_command_content(self.command_content)
+                                        self.if_plan = True
+
                                         time.sleep(1)
                                     self.first_plan = False
                                     self.cur_yaw_search += 1
@@ -702,6 +744,12 @@ class UAVPolicyNode(BasePolicyNode):
                                     self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
                                     self.command_content.pop(0)
                                     self.publish_action(waypoint, look_forward=False)
+                                    
+                                    # TODO 这里是没有replan的逻辑，后续加入replan后删除
+                                    self.command_content.append(self.replan_content)
+                                    self.publish_command_content(self.command_content)
+                                    self.if_plan = True
+                                        
                                     time.sleep(1)
                                     self.first_plan = False
                                     self.cur_z_search += 1
@@ -742,6 +790,7 @@ class UAVPolicyNode(BasePolicyNode):
                                 self.command_content.pop(0)
                                 self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
                                 self.see_none += 1
+                                time.sleep(0.5)
                                 continue
                             else:
                                 self.see_none = 0
@@ -752,12 +801,6 @@ class UAVPolicyNode(BasePolicyNode):
                                 self.first_frame = current_frame
                                 self.first_bbox = self.bbox
 
-                            # TODO 限制重规划次数，需要删除
-                            self.replan_count += 1
-                            # if self.replan_count > 3:
-                            #     self.replan_count = 0
-                            #     self.finish_mission = True
-
                             rospy.loginfo(f"任务完成状态: {self.finish_mission}")
                             if self.finish_mission:
                                 self.vla_state = VLA_STATE.WAIT_ACTION_FINISH
@@ -765,7 +808,8 @@ class UAVPolicyNode(BasePolicyNode):
                                 time.sleep(0.1)                            
                                 # self.command_content.pop(0)
                                 # self.waypoint = self.calculate_plan_yaw(self.first_waypoint, self.first_frame, current_frame, self.over_edge)
-                                # self.if_yaw = True
+                                self.waypoint = self.calculate_plan_yaw(self.waypoint, self.first_frame, self.frame, False)
+                                self.if_yaw = True
                                 continue
 
                             self.waypoint = waypoint
@@ -867,7 +911,7 @@ class UAVPolicyNode(BasePolicyNode):
                         # time.sleep(1)
                         self.vla_state = VLA_STATE.REPLY_MLLM
                         type_msg = Int32()
-                        type_msg.data = 8
+                        type_msg.data = COMMAND_TYPE.GET_PRE
                         self.type_pub.publish(type_msg)
                         self.finish_command = False
                         print("准备下一项目")
